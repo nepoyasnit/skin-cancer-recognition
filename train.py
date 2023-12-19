@@ -308,6 +308,15 @@ def train():
         print("Best AUC:",allData['aucBest'][cv])
         print("Best Mean AUC:",np.mean(allData['aucBest'][cv]))
         print("Convergence Steps:",allData['convergeTime'][cv])
+        with open('train_logs.txt', 'w+') as file:
+            file.write(f'''Best F1: {allData['f1Best'][cv]}\n
+                    Best Sens: {allData['sensBest'][cv]}\n
+                    Best Acc: {allData['accBest'][cv]}\n
+                    Best Per Class Accuracy: {allData['waccBest'][cv]}\n
+                    Best Weighted Acc: {np.mean(allData['waccBest'][cv])}\n
+                    Best AUC: {allData['aucBest'][cv]}\n
+                    Best Mean AUC: {np.mean(allData['aucBest'][cv])}\n
+                    Convergence Steps: {allData['convergeTime'][cv]}''')
 
 
 if __name__ == '__main__':
