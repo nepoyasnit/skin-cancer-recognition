@@ -37,12 +37,12 @@ parser.add_argument("--dataset", type=str, default="ISIC2017", help='ISIC2017 / 
 parser.add_argument("--batch_size", type=int, default=32, help="batch size")
 parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
 parser.add_argument("--lr", type=float, default=0.01, help="initial learning rate")
-parser.add_argument("--outf", type=str, default="logs", help='path of log files')
+parser.add_argument("--outf", type=str, default="skin-cancer-recognition/logs", help='path of log files')
 parser.add_argument("--base_up_factor", type=int, default=8, help="upsample ratio for attention visualization")
 
 parser.add_argument("--normalize_attn", action='store_true', help='if True, attention map is normalized by softmax; otherwise use sigmoid')
 parser.add_argument("--focal_loss", action='store_true', help='turn on focal loss (otherwise use cross entropy loss)')
-parser.add_argument("--no_attention", action='store_true', help='turn off attention')
+parser.add_argument("--no_attention", action='store_false', help='turn off attention')
 parser.add_argument("--over_sample", action='store_true', help='offline oversampling')
 parser.add_argument("--log_images", action='store_true', help='visualze images in Tensoeboard')
 
@@ -181,7 +181,7 @@ def main():
         total = 0
         correct = 0
         with torch.no_grad():
-            with open('val_results.csv', 'wt', newline='') as csv_file:
+            with open('skin-cancer-recognition/val_results.csv', 'wt', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file, delimiter=',')
                 for i, data in enumerate(valloader, 0):
                     images_val, labels_val = data['image'], data['label']
@@ -194,16 +194,16 @@ def main():
                     responses = F.softmax(pred_val, dim=1).squeeze().cpu().numpy()
                     responses = [responses[i] for i in range(responses.shape[0])]
                     csv_writer.writerows(responses)
-            AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel = compute_metrics('val_results.csv', 'val.csv')
+            AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel = compute_metrics('skin-cancer-recognition/val_results.csv', 'skin-cancer-recognition/val.csv')
             # save checkpoints
             print('\nsaving checkpoints ...\n')
             checkpoint = {
                 'state_dict': model.module.state_dict(),
                 'opt_state_dict': optimizer.state_dict(),
             }
-            torch.save(checkpoint, os.path.join(opt.outf, 'checkpoint_latest.pth'))
+            torch.save(checkpoint, os.path.join(opt.outf, 'checkpoints/checkpoint_latest.pth'))
             if AUC > AUC_val: # save optimal validation model
-                torch.save(checkpoint, os.path.join(opt.outf,'checkpoint.pth'))
+                torch.save(checkpoint, os.path.join(opt.outf,'checkpoints/checkpoint.pth'))
                 AUC_val = AUC
             # log scalars
             writer.add_scalar('val/accuracy', correct/total, epoch)

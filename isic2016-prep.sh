@@ -28,3 +28,4 @@ touch train.csv
 touch train_oversample.csv
 touch val.csv
 touch test.csv
+mkdir logs/checkpoints
