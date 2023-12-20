@@ -69,7 +69,7 @@ def main():
         train_file = 'train_oversample.csv'
     else:
         print('no offline oversampling ...')
-        train_file = 'train.csv'
+        train_file = 'skin-cancer-recognition/train.csv'
     transform_train = torch_transforms.Compose([
          RatioCenterCrop(0.8),
          Resize((256,256)),
@@ -88,9 +88,10 @@ def main():
          normalize
     ])
     trainset = ISIC(csv_file=train_file, transform=transform_train)
+    print('Train set length: ', len(trainset))
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True,
         num_workers=8, worker_init_fn=_worker_init_fn_(), drop_last=True)
-    valset = ISIC(csv_file='val.csv', transform=transform_val)
+    valset = ISIC(csv_file='skin-cancer-recognition/val.csv', transform=transform_val)
     valloader = torch.utils.data.DataLoader(valset, batch_size=64, shuffle=False, num_workers=8)
     print('done\n')
 
@@ -244,9 +245,9 @@ def main():
                     writer.add_image('val/attention_map_2', attn2, epoch)
 
 if __name__ == "__main__":
-    if opt.preprocess:
+    if True:
         if opt.dataset == "ISIC2016":
-            preprocess_data_2016(root_dir='../data_2016')
+            preprocess_data_2016(root_dir='skin-cancer-recognition/data_2016')
         elif opt.dataset == "ISIC2017":
-            preprocess_data_2017(root_dir='../data_2017', seg_dir='Train_Lesion')
+            preprocess_data_2017(root_dir='skin-cancer-recognition/data_2017', seg_dir='Train_Lesion')
     main()

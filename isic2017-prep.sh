@@ -72,3 +72,8 @@ mkdir data_2017/Test_Lesion/seborrheic_keratosis
 mkdir data_2017/Test_Dermo/melanoma
 mkdir data_2017/Test_Dermo/nevus
 mkdir data_2017/Test_Dermo/seborrheic_keratosis
+
+touch train.csv
+touch train_oversample.csv
+touch val.csv
+touch test.csv

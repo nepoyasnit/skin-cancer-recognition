@@ -23,3 +23,8 @@ mkdir data_2016/Test/malignant/
 
 mv ISBI2016_ISIC_Part3_Training_Data/ISIC_0000000.jpg data_2016/Train/benign
 mv ISBI2016_ISIC_Part3_Test_Data/ISIC_0000003.jpg data_2016/Test/benign
+
+touch train.csv
+touch train_oversample.csv
+touch val.csv
+touch test.csv

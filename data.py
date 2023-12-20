@@ -14,7 +14,7 @@ def preprocess_data_2016(root_dir):
     malignant = glob.glob(os.path.join(root_dir, 'Train', 'malignant', '*.jpg')); malignant.sort()
     benign_seg    = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'benign', '*.png')); benign_seg.sort()
     malignant_seg = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'malignant', '*.png')); malignant_seg.sort()
-    with open('train.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/train.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
@@ -29,7 +29,7 @@ def preprocess_data_2016(root_dir):
     malignant = glob.glob(os.path.join(root_dir, 'Train', 'malignant', '*.jpg')); malignant.sort()
     benign_seg    = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'benign', '*.png')); benign_seg.sort()
     malignant_seg = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'malignant', '*.png')); malignant_seg.sort()
-    with open('train_oversample.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/train_oversample.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
@@ -46,7 +46,7 @@ def preprocess_data_2016(root_dir):
     #### segmentation of val data is not used! ######
     benign_seg    = glob.glob(os.path.join(root_dir, 'Val', 'benign', '*.jpg')); benign_seg.sort()
     malignant_seg = glob.glob(os.path.join(root_dir, 'Val', 'malignant', '*.jpg')); malignant_seg.sort()
-    with open('val.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/val.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
@@ -61,7 +61,7 @@ def preprocess_data_2016(root_dir):
     malignant = glob.glob(os.path.join(root_dir, 'Test', 'malignant', '*.jpg')); malignant.sort()
     benign_seg    = glob.glob(os.path.join(root_dir, 'Test_Lesion', 'benign', '*.png')); benign_seg.sort()
     malignant_seg = glob.glob(os.path.join(root_dir, 'Test_Lesion', 'malignant', '*.png')); malignant_seg.sort()
-    with open('test.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/test.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
@@ -81,7 +81,7 @@ def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
     melanoma_seg = glob.glob(os.path.join(root_dir, seg_dir, 'melanoma', '*.png')); melanoma_seg.sort()
     nevus_seg    = glob.glob(os.path.join(root_dir, seg_dir, 'nevus', '*.png')); nevus_seg.sort()
     sk_seg       = glob.glob(os.path.join(root_dir, seg_dir, 'seborrheic_keratosis', '*.png')); sk_seg.sort()
-    with open('train.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/train.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(melanoma)):
             filename = melanoma[k]
@@ -102,7 +102,7 @@ def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
     melanoma_seg = glob.glob(os.path.join(root_dir, seg_dir, 'melanoma', '*.png')); melanoma_seg.sort()
     nevus_seg    = glob.glob(os.path.join(root_dir, seg_dir, 'nevus', '*.png')); nevus_seg.sort()
     sk_seg       = glob.glob(os.path.join(root_dir, seg_dir, 'seborrheic_keratosis', '*.png')); sk_seg.sort()
-    with open('train_oversample.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/train_oversample.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for i in range(4):
             for k in range(len(melanoma)):
@@ -123,9 +123,9 @@ def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
     sk       = glob.glob(os.path.join(root_dir, 'Val', 'seborrheic_keratosis', '*.jpg')); sk.sort()
     #### segmentation of val data is not used! ######
     melanoma_seg = glob.glob(os.path.join(root_dir, 'Val', 'melanoma', '*.jpg')); melanoma_seg.sort()
-    nevus_seg    = glob.glob(os.path.join(root_dir, 'Val', 'nevus', '*.jpg')); nevus_seg.sort()
-    sk_seg       = glob.glob(os.path.join(root_dir, 'Val', 'seborrheic_keratosis', '*.jpg')); sk_seg.sort()
-    with open('val.csv', 'wt', newline='') as csv_file:
+    nevus_seg = glob.glob(os.path.join(root_dir, 'Val', 'nevus', '*.jpg')); nevus_seg.sort()
+    sk_seg = glob.glob(os.path.join(root_dir, 'Val', 'seborrheic_keratosis', '*.jpg')); sk_seg.sort()
+    with open('skin-cancer-recognition/val.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(melanoma)):
             filename = melanoma[k]
@@ -146,7 +146,7 @@ def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
     melanoma_seg = glob.glob(os.path.join(root_dir, 'Test_Lesion', 'melanoma', '*.png')); melanoma_seg.sort()
     nevus_seg    = glob.glob(os.path.join(root_dir, 'Test_Lesion', 'nevus', '*.png')); nevus_seg.sort()
     sk_seg       = glob.glob(os.path.join(root_dir, 'Test_Lesion', 'seborrheic_keratosis', '*.png')); sk_seg.sort()
-    with open('test.csv', 'wt', newline='') as csv_file:
+    with open('skin-cancer-recognition/test.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(melanoma)):
             filename = melanoma[k]
@@ -161,9 +161,11 @@ def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
             filename_seg = sk_seg[k]
             writer.writerow([filename] + [filename_seg] + ['0'])
 
+
 class ISIC(udata.Dataset):
     def __init__(self, csv_file, transform=None):
         file = open(csv_file, newline='')
+        print(csv_file)
         reader = csv.reader(file, delimiter=',')
         self.pairs = [row for row in reader]
         self.transform = transform
