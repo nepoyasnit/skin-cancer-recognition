@@ -20,3 +20,5 @@ train_oversample.csv
 val.csv
 val_results.csv
 logs/
+etc/
+conda-meta/

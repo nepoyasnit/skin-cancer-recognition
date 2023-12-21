@@ -73,9 +73,19 @@ mkdir data_2017/Test_Dermo/melanoma
 mkdir data_2017/Test_Dermo/nevus
 mkdir data_2017/Test_Dermo/seborrheic_keratosis
 
-touch train.csv
-touch train_oversample.csv
-touch val.csv
-touch test.csv
+mkdir image_paths
 
+touch image_paths/train.csv
+touch image_paths/train_oversample.csv
+touch image_paths/val.csv
+touch image_paths/test.csv
 mkdir logs/checkpoints
+
+mkdir results
+mkdir data_labels
+
+mv ISBI2016_ISIC_Part3_Test_GroundTruth.csv data_labels/ISBI2016_ISIC_Part3_Test_GroundTruth.csv
+mv ISBI2016_ISIC_Part3_Training_GroundTruth.csv data_labels/ISBI2016_ISIC_Part3_Training_GroundTruth.csv
+mv ISIC-2017_Test_v2_Part3_GroundTruth.csv data_labels/ISIC-2017_Test_v2_Part3_GroundTruth.csv
+mv ISIC-2017_Training_Part3_GroundTruth.csv data_labels/ISIC-2017_Training_Part3_GroundTruth.csv
+mv ISIC-2017_Validation_Part3_GroundTruth.csv data_labels/ISIC-2017_Validation_Part3_GroundTruth.csv

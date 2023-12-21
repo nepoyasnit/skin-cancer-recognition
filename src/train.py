@@ -20,6 +20,7 @@ from loss import FocalLoss
 from data import preprocess_data_2016, preprocess_data_2017, ISIC
 from utilities import *
 from transforms import *
+from sklearn.metrics import confusion_matrix
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -66,10 +67,10 @@ def main():
         normalize = Normalize((0.6820, 0.5312, 0.4736), (0.0840, 0.1140, 0.1282))
     if opt.over_sample:
         print('data is offline oversampled ...')
-        train_file = 'train_oversample.csv'
+        train_file = 'image_paths/train_oversample.csv'
     else:
         print('no offline oversampling ...')
-        train_file = 'skin-cancer-recognition/train.csv'
+        train_file = 'skin-cancer-recognition/image_paths/train.csv'
     transform_train = torch_transforms.Compose([
          RatioCenterCrop(0.8),
          Resize((256,256)),
@@ -91,7 +92,7 @@ def main():
     print('Train set length: ', len(trainset))
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True,
         num_workers=8, worker_init_fn=_worker_init_fn_(), drop_last=True)
-    valset = ISIC(csv_file='skin-cancer-recognition/val.csv', transform=transform_val)
+    valset = ISIC(csv_file='skin-cancer-recognition/image_paths/val.csv', transform=transform_val)
     valloader = torch.utils.data.DataLoader(valset, batch_size=64, shuffle=False, num_workers=8)
     print('done\n')
 
@@ -181,7 +182,7 @@ def main():
         total = 0
         correct = 0
         with torch.no_grad():
-            with open('skin-cancer-recognition/val_results.csv', 'wt', newline='') as csv_file:
+            with open('skin-cancer-recognition/results/val_results.csv', 'wt', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file, delimiter=',')
                 for i, data in enumerate(valloader, 0):
                     images_val, labels_val = data['image'], data['label']
@@ -194,7 +195,7 @@ def main():
                     responses = F.softmax(pred_val, dim=1).squeeze().cpu().numpy()
                     responses = [responses[i] for i in range(responses.shape[0])]
                     csv_writer.writerows(responses)
-            AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel = compute_metrics('skin-cancer-recognition/val_results.csv', 'skin-cancer-recognition/val.csv')
+            AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel, specifity, sensitivity, conf_matrix = compute_metrics('skin-cancer-recognition/results/val_results.csv', 'skin-cancer-recognition/image_paths/val.csv')
             # save checkpoints
             print('\nsaving checkpoints ...\n')
             checkpoint = {
@@ -213,10 +214,14 @@ def main():
             writer.add_scalar('val/recall_mel', recall_mel, epoch)
             writer.add_scalar('val/AP', AP, epoch)
             writer.add_scalar('val/AUC', AUC, epoch)
+            writer.add_scalar('val/sensitivity', sensitivity, epoch)
+            writer.add_scalar('val/specifity', specifity, epoch)
             print("\n[epoch %d] val result: accuracy %.2f%%" % (epoch+1, 100*correct/total))
             print("\nmean precision %.2f%% mean recall %.2f%% \nprecision for mel %.2f%% recall for mel %.2f%%" %
                     (100*precision_mean, 100*recall_mean, 100*precision_mel, 100*recall_mel))
             print("\nAP %.4f AUC %.4f optimal AUC: %.4f\n" % (AP, AUC, AUC_val))
+            print(f'Sensitivity: {sensitivity}\n Specifity: {specifity}')
+            print(f'Confusion matrix: {conf_matrix}')
             # log images
             if opt.log_images:
                 print('\nlog images ...\n')

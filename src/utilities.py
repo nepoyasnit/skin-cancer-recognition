@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.utils as utils
-from sklearn.metrics import average_precision_score, roc_auc_score, precision_score, recall_score
+from sklearn.metrics import average_precision_score, roc_auc_score, precision_score, \
+recall_score, confusion_matrix
 
 def visualize_attn(I, a, up_factor, nrow):
     # image
@@ -51,4 +52,12 @@ def compute_metrics(result_file, gt_file, threshold=0.5):
     # recall
     recall_mean = recall_score(gt, pred, average='macro')
     recall_mel  = recall_score(gt, pred, average='binary', pos_label=1)
-    return [AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel]
+    # sensitivity and specifity 
+    conf_matrix = confusion_matrix(y_pred=pred, y_true=gt)
+    tn, fp, fn, tp = conf_matrix.ravel()
+    specifity = tn / (tn + fp)
+    sensitivity = tp / (tp + fn)
+
+    return AP, AUC, precision_mean, precision_mel, recall_mean, recall_mel, specifity, sensitivity, conf_matrix
+
+
