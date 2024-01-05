@@ -1,4 +1,5 @@
 import os
+import sys
 import csv
 import random
 import argparse
@@ -10,17 +11,21 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
-
 import torchvision
 import torchvision.utils as utils
 import torchvision.transforms as torch_transforms
 
-from networks import AttnVGG, VGG
-from loss import FocalLoss
+sys.path.append("skin-cancer-recognition/src/network")
+
 from data import preprocess_data_2016, preprocess_data_2017, ISIC
-from utilities import *
-from transforms import *
+import network
+from network.loss import FocalLoss
+from network.transforms import RandomCrop, RandomHorizontalFlip, RandomRotate, RandomVerticalFlip, RatioCenterCrop, \
+    Normalize, ToTensor, Resize, CenterCrop
+from network.networks import AttnVGG
+from network.utilities import visualize_attn, compute_metrics
 from sklearn.metrics import confusion_matrix
+from lion_pytorch import Lion
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -67,7 +72,7 @@ def main():
         normalize = Normalize((0.6820, 0.5312, 0.4736), (0.0840, 0.1140, 0.1282))
     if opt.over_sample:
         print('data is offline oversampled ...')
-        train_file = 'image_paths/train_oversample.csv'
+        train_file = 'skin-cancer-recognition/image_paths/train_oversample.csv'
     else:
         print('no offline oversampling ...')
         train_file = 'skin-cancer-recognition/image_paths/train.csv'
@@ -113,7 +118,7 @@ def main():
 
     if opt.focal_loss:
         print('use focal loss ...')
-        criterion = FocalLoss(gama=2., size_average=True, weight=None)
+        criterion = FocalLoss(gama=2., size_average=True, weight=[0.1, 0.9])
     else:
         print('use cross entropy loss ...')
         criterion = nn.CrossEntropyLoss()
@@ -127,6 +132,7 @@ def main():
 
     # optimizer
     optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9, weight_decay=1e-4, nesterov=True)
+    # optimizer = Lion(model.parameters(), lr=opt.lr, weight_decay=1e-4)
     lr_lambda = lambda epoch : np.power(0.1, epoch//10)
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
 

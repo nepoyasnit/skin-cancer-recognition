@@ -14,16 +14,15 @@ def preprocess_data_2016(root_dir):
     malignant = glob.glob(os.path.join(root_dir, 'Train', 'malignant', '*.jpg')); malignant.sort()
     benign_seg    = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'benign', '*.png')); benign_seg.sort()
     malignant_seg = glob.glob(os.path.join(root_dir, 'Train_Lesion', 'malignant', '*.png')); malignant_seg.sort()
+    print(benign_seg)
     with open('skin-cancer-recognition/image_paths/train.csv', 'wt', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
-            filename_seg = benign_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['0'])
+            writer.writerow([filename] + ['0'])
         for k in range(len(malignant)):
             filename = malignant[k]
-            filename_seg = malignant_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['1'])
+            writer.writerow([filename] + ['1'])
     # training data oversample
     benign    = glob.glob(os.path.join(root_dir, 'Train', 'benign', '*.jpg')); benign.sort()
     malignant = glob.glob(os.path.join(root_dir, 'Train', 'malignant', '*.jpg')); malignant.sort()
@@ -33,13 +32,11 @@ def preprocess_data_2016(root_dir):
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
-            filename_seg = benign_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['0'])
+            writer.writerow([filename] + ['0'])
         for i in range(4):
             for k in range(len(malignant)):
                 filename = malignant[k]
-                filename_seg = malignant_seg[k]
-                writer.writerow([filename] + [filename_seg] + ['1'])
+                writer.writerow([filename] + ['1'])
     # val data
     benign    = glob.glob(os.path.join(root_dir, 'Val', 'benign', '*.jpg')); benign.sort()
     malignant = glob.glob(os.path.join(root_dir, 'Val', 'malignant', '*.jpg')); malignant.sort()
@@ -50,12 +47,10 @@ def preprocess_data_2016(root_dir):
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
-            filename_seg = benign_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['0'])
+            writer.writerow([filename] + ['0'])
         for k in range(len(malignant)):
             filename = malignant[k]
-            filename_seg = malignant_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['1'])
+            writer.writerow([filename] + ['1'])
     # test data
     benign    = glob.glob(os.path.join(root_dir, 'Test', 'benign', '*.jpg')); benign.sort()
     malignant = glob.glob(os.path.join(root_dir, 'Test', 'malignant', '*.jpg')); malignant.sort()
@@ -65,12 +60,10 @@ def preprocess_data_2016(root_dir):
         writer = csv.writer(csv_file, delimiter=',')
         for k in range(len(benign)):
             filename = benign[k]
-            filename_seg = benign_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['0'])
+            writer.writerow([filename] + ['0'])
         for k in range(len(malignant)):
             filename = malignant[k]
-            filename_seg = malignant_seg[k]
-            writer.writerow([filename] + [filename_seg] + ['1'])
+            writer.writerow([filename] + ['1'])
 
 def preprocess_data_2017(root_dir, seg_dir='Train_Lesion'):
     print('pre-processing data ...\n')

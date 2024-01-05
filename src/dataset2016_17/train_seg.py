@@ -15,11 +15,11 @@ import torchvision
 import torchvision.utils as utils
 import torchvision.transforms as torch_transforms
 
-from networks import AttnVGG
-from loss import FocalLoss, DiceLoss
-from data import preprocess_data_2016, preprocess_data_2017, ISIC
-from utilities import *
-from transforms import *
+from network.networks import AttnVGG
+from network.loss import FocalLoss, DiceLoss
+from .data import preprocess_data_2016, preprocess_data_2017, ISIC
+from network.utilities import *
+from network.transforms import *
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"

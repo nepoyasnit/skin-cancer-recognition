@@ -10,7 +10,7 @@ class FocalLoss(nn.Module):
         '''
         self.gama = gama
         self.size_average = size_average
-        self.weight = weight
+        self.weight = torch.Tensor(weight)
     def forward(self, inputs, targets):
         '''
         inputs: size(N,C)
