@@ -112,7 +112,7 @@ def preprocess_data():
 
     # Convert label list to array
     mdlParams['labels_array'] = np.array(mdlParams['labels_list'])
-    print(np.mean(mdlParams['labels_array'],axis=0))
+    print('Mean: ', np.mean(mdlParams['labels_array'],axis=0))
 
 
     # Perhaps preload images

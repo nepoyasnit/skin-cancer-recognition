@@ -11,6 +11,7 @@ from sklearn.utils import class_weight
 
 import numpy as np
 import torch
+import pickle
 
 
 def efficientnet_b0(config):
@@ -195,3 +196,4 @@ def balance_classes(mdlParams):
         print("Current class weights with extra",class_weights)
 
     return mdlParams, class_weights
+

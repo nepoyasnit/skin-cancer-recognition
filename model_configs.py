@@ -20,7 +20,7 @@ def set_model_config():
     mdlParams['orderedCrop'] = True
     mdlParams['voting_scheme'] = 'average'
     mdlParams['classification'] = True
-    mdlParams['balance_classes'] = 9
+    mdlParams['balance_classes'] = 2
     mdlParams['extra_fac'] = 1.0
     mdlParams['numClasses'] = 2
     mdlParams['no_c9_eval'] = True

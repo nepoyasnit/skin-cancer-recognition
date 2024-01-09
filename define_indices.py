@@ -25,6 +25,7 @@ def set_ham_inds(mdlParams):
 def define_cv_indices(mdlParams, exclude_list):
     with open(mdlParams['saveDir'] + 'indices_isic2019.pkl','rb') as f:
         indices = pickle.load(f)
+    print(indices)
     mdlParams['trainIndCV'] = indices['trainIndCV']
     mdlParams['valIndCV'] = indices['valIndCV']
     if mdlParams['exclude_inds']:
