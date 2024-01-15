@@ -9,6 +9,7 @@ from create_labels import create_labels_dict
 from prepare_files import set_images_dirs, get_preload_imgs
 from define_indices import define_cv_indices, set_ham_inds
 
+
 def set_imgs_means(mdlParams):
     '''
     Set imgs means in params dict
@@ -96,6 +97,7 @@ def preprocess_data():
     print('Images path: ', path1)
     # All sets
     allSets = sorted(glob(path1 + '*/'))
+    print('Sets amount: ', len(allSets))
 
     # allSets = make_official_dataset_first(allSets, mdlParams)
 

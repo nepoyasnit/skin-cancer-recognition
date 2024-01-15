@@ -10,7 +10,7 @@ def set_model_config():
     print('Load dataset path: ', mdlParams['dataDir'])
 
     ### Model Selection ###
-    mdlParams['model_type'] = 'efficientnet-b0'
+    mdlParams['model_type'] = 'efficientnet-b4'
     mdlParams['dataset_names'] = ['official']#,'sevenpoint_rez3_ll']
     mdlParams['file_ending'] = '.jpg'
     mdlParams['exclude_inds'] = False
@@ -25,7 +25,7 @@ def set_model_config():
     mdlParams['numClasses'] = 2
     mdlParams['no_c9_eval'] = True
     mdlParams['numOut'] = mdlParams['numClasses']
-    mdlParams['numCV'] = 5
+    mdlParams['numCV'] = 1
     mdlParams['trans_norm_first'] = True
     # Scale up for b1-b7
     mdlParams['input_size'] = [224,224,3]

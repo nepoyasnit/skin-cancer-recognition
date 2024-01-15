@@ -24,6 +24,7 @@ from data_processing import preprocess_data
 
 def run_train(mdlParams, modelVars, allData, save_dict, save_dict_train, eval_set, start_epoch, cv):
     start_time = time.time()
+    
     print("Start training...")
     for step in range(start_epoch, mdlParams['training_steps']+1):
         # One Epoch of training
@@ -274,6 +275,7 @@ def train():
 
         modelVars = setup_meta_training(mdlParams, modelVars)
 
+        print(mdlParams['numGPUs'])
         # multi gpu support
         if len(mdlParams['numGPUs']) > 1:
             modelVars['model'] = nn.DataParallel(modelVars['model'])

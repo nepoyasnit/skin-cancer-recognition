@@ -38,15 +38,7 @@ def efficientnet_b6(config):
 def efficientnet_b7(config):
     return EfficientNet.from_pretrained('efficientnet-b7',num_classes=config['numClasses'])
 
-model_map = OrderedDict([('efficientnet-b0', efficientnet_b0),
-                        ('efficientnet-b1', efficientnet_b1),
-                        ('efficientnet-b2', efficientnet_b2),
-                        ('efficientnet-b3', efficientnet_b3),
-                        ('efficientnet-b4', efficientnet_b4),
-                        ('efficientnet-b5', efficientnet_b5),
-                        ('efficientnet-b6', efficientnet_b6),
-                        ('efficientnet-b7', efficientnet_b7),
-])
+model_map = OrderedDict([('efficientnet-b4', efficientnet_b4),])
 
 def modify_densenet_avg_pool(model):
     def logits(self, features):
@@ -154,10 +146,13 @@ def define_model(mdlParams, modelVars, cv):
 
 def balance_classes(mdlParams):
     if mdlParams['balance_classes'] < 3 or mdlParams['balance_classes'] == 7 or mdlParams['balance_classes'] == 11:
-        class_weights = class_weight.compute_class_weight('balanced',np.unique(np.argmax(mdlParams['labels_array'][mdlParams['trainInd'],:],1)),np.argmax(mdlParams['labels_array'][mdlParams['trainInd'],:],1))
-        print("Current class weights",class_weights)
-        class_weights = class_weights*mdlParams['extra_fac']
-        print("Current class weights with extra",class_weights)
+        # print(mdlParams['labels_array'][:4])
+        # print(max(mdlParams['trainInd']))
+        # class_weights = class_weight.compute_class_weight('balanced', np.unique(np.argmax(mdlParams['labels_array'][mdlParams['trainInd'], :],1)),np.argmax(mdlParams['labels_array'][mdlParams['trainInd', :]],1))
+        # print("Current class weights",class_weights)
+        # class_weights = class_weights*mdlParams['extra_fac']
+        # print("Current class weights with extra",class_weights)
+        class_weights = np.array([0.1, 0.9])
     elif mdlParams['balance_classes'] == 3 or mdlParams['balance_classes'] == 4:
         # Split training set by classes
         not_one_hot = np.argmax(mdlParams['labels_array'],1)

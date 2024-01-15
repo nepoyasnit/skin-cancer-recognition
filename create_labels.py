@@ -7,7 +7,7 @@ def set_labels(mdlParams, labels_str):
     Set labels by .csv file
     '''
     for label_row in labels_str:
-        if 'image' == label_row[0]:
+        if 'image_name' == label_row[0]:
             continue
         #if 'ISIC' in row[0] and '_downsampled' in row[0]:
         #    print(row[0])
@@ -15,15 +15,19 @@ def set_labels(mdlParams, labels_str):
             print("removed", label_row[0] + '_downsampled')
             continue
         if mdlParams['numClasses'] == 1:
-            if label_row[1] == '1.0':
-                mdlParams['labels_dict'][label_row[0]] = np.array([1.])
+            if label_row[1] == 1:
+                mdlParams['labels_dict'][label_row[0]] = np.array([1])
             else:
-                mdlParams['labels_dict'][label_row[0]] = np.array([0.])
+                mdlParams['labels_dict'][label_row[0]] = np.array([0])
         if mdlParams['numClasses'] == 2:
-            if label_row[1] == '0.0':
-                mdlParams['labels_dict'][label_row[0]] = np.array([0, 1.])
+            if label_row[1] == '0':
+                mdlParams['labels_dict'][label_row[0]] = np.array([1, 0])
             else:
-                mdlParams['labels_dict'][label_row[0]] = np.array([1., 0.])
+                mdlParams['labels_dict'][label_row[0]] = np.array([0, 1])
+            # if label_row[1] == '1':
+            #     mdlParams['labels_dict'][label_row[0]] = np.array([1])
+            # else:
+            #     mdlParams['labels_dict'][label_row[0]] = np.array([0])
         elif mdlParams['numClasses'] == 7:
             mdlParams['labels_dict'][label_row[0]] = np.array([int(float(label_row[i])) for i in range(1,8)])
         elif mdlParams['numClasses'] == 8:
