@@ -1,0 +1,2 @@
+val_loss,val_f1s,valid_sensitivity,valid_specificity,valid_accuracy
+147.43832155257937,0.6733334253704737,1.0,0.16666666666666666,0.75
