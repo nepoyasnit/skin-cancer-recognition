@@ -4,15 +4,15 @@
 # In[ ]:
 
 
-# !pip install nb_black
-# %load_ext nb_black
+# # !pip install nb_black
+# # %load_ext nb_black
 
-# get_ipython().system('pip install timm')
+# !pip install timm
 # # !pip install -q kaggle
-# get_ipython().system('pip install albumentations')
-# get_ipython().system('pip3 install torchmetrics')
-# get_ipython().system('pip install "opencv-python-headless<4.3"')
-# get_ipython().system('pip install torchsummary')
+# !pip install albumentations
+# !pip3 install torchmetrics
+# !pip install "opencv-python-headless<4.3"
+# !pip install torchsummary
 
 
 # In[2]:
@@ -611,7 +611,7 @@ def fit_gpu(
 BATCH_SIZE = 20
 LR = 2e-05
 GAMMA = 0.7
-N_EPOCHS = 1
+N_EPOCHS = 20
 
 
 # In[19]:
