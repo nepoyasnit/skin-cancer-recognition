@@ -104,15 +104,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.cuda.get_device_name(0)
 
 
-# In[4]:
+# In[6]:
 
 
 CORE_PATH = ""
-DATA_PATH = "../isic2019/labels/official/binary_labels2019_2cls.csv"
-TRAIN_IMG_PATH = "../isic2019/images/official/"
+DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
+TRAIN_IMG_PATH = "../../isic2019/images/official/"
 
 
-# In[5]:
+# In[7]:
 
 
 data_csv = pd.read_csv(DATA_PATH)
@@ -130,7 +130,7 @@ io.imshow(img)
 # print(sys.getsizeof(img))
 
 
-# In[7]:
+# In[8]:
 
 
 def load_isic_training_data(image_folder, ground_truth_file):
@@ -152,7 +152,7 @@ def compute_class_dist(df,known_category_names):
     return
 
 
-# In[8]:
+# In[9]:
 
 
 df_ground_truth, known_category_names = load_isic_training_data(
@@ -161,7 +161,7 @@ df_ground_truth, known_category_names = load_isic_training_data(
 df_ground_truth.head()
 
 
-# In[9]:
+# In[10]:
 
 
 df_ground_truth["kfold"] = -1
@@ -172,7 +172,7 @@ for f, (t_, v_) in enumerate(
     df_ground_truth.loc[v_, "kfold"] = f
 
 
-# In[10]:
+# In[11]:
 
 
 df_fold1 = df_ground_truth[df_ground_truth["kfold"] == 1]
@@ -184,7 +184,7 @@ print("\n FOLD 2 DISTRIBUTION \n")
 compute_class_dist(df_fold2, known_category_names)
 
 
-# In[11]:
+# In[12]:
 
 
 class ClassificationDataset(torch.utils.data.Dataset):
@@ -224,7 +224,7 @@ class ClassificationDataset(torch.utils.data.Dataset):
         return image, targets
 
 
-# In[12]:
+# In[13]:
 
 
 # Mean:[0.6237459654304592, 0.5201169854503829, 0.5039494477029685]
@@ -337,13 +337,13 @@ def get_whole_dataset():
     return dataset
 
 
-# In[13]:
+# In[14]:
 
 
 writer = SummaryWriter()
 
 
-# In[14]:
+# In[15]:
 
 
 class Model(nn.Module):
@@ -394,13 +394,13 @@ class Model(nn.Module):
             w_f1 = f1_score(
                 output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
             )
-            output = output.cpu().numpy()
-            target = target.cpu().numpy()
+            output = output.to('cpu').detach().numpy()
+            target = target.to('cpu').detach().numpy()
 
-            # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
+            tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
-            # acc_computed = (tp+tn)/(tn+fp+fn+tp)
+            acc_computed = (tp+tn)/(tn+fp+fn+tp)
             # torchmetrics.functional.f1(output,target,num_classes=len(known_category_names),average='weighted')
             # update training loss and accuracy
             epoch_loss += loss
@@ -416,10 +416,10 @@ class Model(nn.Module):
                 optimizer.step()
                 if i % 20 == 0:
                     print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
-                    # print("Accuracy: ", acc_computed)
+                    print("Accuracy: ", acc_computed)
                     
-        epoch_loss.cpu().numpy()
-        epoch_w_f1.cpu().numpy()
+        epoch_loss.to('cpu').detach().numpy()
+        epoch_w_f1.to('cpu').detach().numpy()
 
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
@@ -475,7 +475,7 @@ class Model(nn.Module):
                 specificity / len(valid_loader), acc_computed / len(valid_loader)
 
 
-# In[15]:
+# In[16]:
 
 
 def fit_gpu(
@@ -562,7 +562,7 @@ def fit_gpu(
     }
 
 
-# In[16]:
+# In[17]:
 
 
 BATCH_SIZE = 20
@@ -583,7 +583,7 @@ N_EPOCHS = 20
 
 
 
-# In[17]:
+# In[18]:
 
 
 # model = MobileVitV2(n_classes=len(known_category_names), pretrained=True)
@@ -592,7 +592,7 @@ model = Model('efficientnet_b3',pretrained=True)
 # summary(model, (3, IMG_SIZE, IMG_SIZE))
 
 
-# In[18]:
+# In[19]:
 
 
 def _run(fold):
@@ -660,16 +660,10 @@ def _run(fold):
     return logs
 
 
-# In[19]:
+# In[20]:
 
 
 np.seterr(invalid='ignore')
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
