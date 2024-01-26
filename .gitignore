@@ -1,3 +1,4 @@
 .ipynb_checkpoints/
 baselines/weights/checkpoints/
+transformers/weights/checkpoints/
 __pycache__/
