@@ -394,13 +394,13 @@ class Model(nn.Module):
             w_f1 = f1_score(
                 output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
             )
-            output = output.to('cpu').detach().numpy()
-            target = target.to('cpu').detach().numpy()
+            output = output.cpu().numpy()
+            target = target.cpu().numpy()
 
-            tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
+            # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
-            acc_computed = (tp+tn)/(tn+fp+fn+tp)
+            # acc_computed = (tp+tn)/(tn+fp+fn+tp)
             # torchmetrics.functional.f1(output,target,num_classes=len(known_category_names),average='weighted')
             # update training loss and accuracy
             epoch_loss += loss
@@ -416,10 +416,10 @@ class Model(nn.Module):
                 optimizer.step()
                 if i % 20 == 0:
                     print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
-                    print("Accuracy: ", acc_computed)
+                    # print("Accuracy: ", acc_computed)
                     
-        epoch_loss.to('cpu').detach().numpy()
-        epoch_w_f1.to('cpu').detach().numpy()
+        epoch_loss.cpu().numpy()
+        epoch_w_f1.cpu().numpy()
 
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 

@@ -375,13 +375,13 @@ def get_whole_dataset():
     return dataset
 
 
-# In[15]:
+# In[27]:
 
 
-writer = SummaryWriter()
+writer = SummaryWriter('runs/Jan24_13-43-31_u2204rtx4090/')
 
 
-# In[16]:
+# In[28]:
 
 
 class Model(nn.Module):
@@ -432,13 +432,13 @@ class Model(nn.Module):
             w_f1 = f1_score(
                 output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
             )
-            output = output.to('cpu').detach().numpy()
-            target = target.to('cpu').detach().numpy()
+            output = output.cpu().numpy()
+            target = target.cpu().numpy()
 
-            tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
+            # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
-            acc_computed = (tp+tn)/(tn+fp+fn+tp)
+            # acc_computed = (tp+tn)/(tn+fp+fn+tp)
             # torchmetrics.functional.f1(output,target,num_classes=len(known_category_names),average='weighted')
             # update training loss and accuracy
             epoch_loss += loss
@@ -454,10 +454,10 @@ class Model(nn.Module):
                 optimizer.step()
                 if i % 20 == 0:
                     print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
-                    print("Accuracy: ", acc_computed)
+                    # print("Accuracy: ", acc_computed)
                     
-        epoch_loss.to('cpu').detach().numpy()
-        epoch_w_f1.to('cpu').detach().numpy()
+        epoch_loss.cpu().numpy()
+        epoch_w_f1.cpu().numpy()
 
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
@@ -517,7 +517,7 @@ class Model(nn.Module):
                 specificity / len(valid_loader), acc_computed / len(valid_loader)
 
 
-# In[17]:
+# In[29]:
 
 
 def fit_gpu(
@@ -605,22 +605,22 @@ def fit_gpu(
     }
 
 
-# In[18]:
+# In[37]:
 
 
 BATCH_SIZE = 20
 LR = 2e-05
 GAMMA = 0.7
-N_EPOCHS = 20
+N_EPOCHS = 5
 
 
-# In[19]:
+# In[38]:
 
 
 known_category_names
 
 
-# In[20]:
+# In[39]:
 
 
 # model = MobileVitV2(n_classes=len(known_category_names), pretrained=True)
@@ -629,7 +629,14 @@ model = Model('efficientnet_b3',pretrained=True)
 # summary(model, (3, IMG_SIZE, IMG_SIZE))
 
 
-# In[21]:
+# In[40]:
+
+
+checkpoint = torch.load('weights/checkpoints/efficientnet_b320240125-0306.pth')
+model.load_state_dict(checkpoint)
+
+
+# In[41]:
 
 
 def _run(fold):
@@ -697,7 +704,7 @@ def _run(fold):
     return logs
 
 
-# In[22]:
+# In[42]:
 
 
 np.seterr(invalid='ignore')
@@ -709,7 +716,7 @@ np.seterr(invalid='ignore')
 
 
 
-# In[ ]:
+# In[36]:
 
 
 for i in range(5):
