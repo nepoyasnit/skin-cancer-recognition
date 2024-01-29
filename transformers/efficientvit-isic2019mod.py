@@ -46,7 +46,7 @@ IMG_SIZE = 224
 BATCH_SIZE = 20
 LR = 2e-05
 GAMMA = 0.7
-N_EPOCHS = 20
+N_EPOCHS = 5  
 
 CORE_PATH = ""
 DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
@@ -138,13 +138,13 @@ class Model(nn.Module):
                             num_classes=self.num_classes, 
                             average="weighted", 
                             task="multiclass")
-            output = output.to('cpu').detach().numpy()
-            target = target.to('cpu').detach().numpy()
+            # output = output.to('cpu').detach().numpy()
+            # target = target.to('cpu').detach().numpy()
 
-            tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
+            # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
-            acc_computed = (tp+tn)/(tn+fp+fn+tp)
+            # acc_computed = (tp+tn)/(tn+fp+fn+tp)
             # torchmetrics.functional.f1(output,target,num_classes=len(known_category_names),average='weighted')
             # update training loss and accuracy
             epoch_loss += loss
@@ -154,7 +154,10 @@ class Model(nn.Module):
             optimizer.step()
             if i % 20 == 0:
                 print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
-                print("Accuracy: ", acc_computed)
+                # print("Accuracy: ", acc_computed)
+            del output, loss
+            del target, data
+            gc.collect()
                     
         epoch_loss.to('cpu').detach().numpy()
         epoch_w_f1.to('cpu').detach().numpy()
@@ -404,23 +407,21 @@ def fit_gpu(model,
     }
 
 
-def _run(fold):
+def _run(fold, model):
     train_dataset, valid_dataset = get_train_val(fold, _mean, _std)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True)
+                                               drop_last=True, num_workers=16)
 
     valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True)
+                                               drop_last=True, num_workers=16)
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device == "cuda":
-        model.to(device)
-    else:
-        print("Cuda is not available")
+    print('Device: ', device)
+    model.to(device)
 
     lr = LR
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -488,13 +489,4 @@ if __name__ == "__main__":
 
     for i in range(5):
         start_time = time.time()
-        _run(i)
-
-    dataset = get_whole_dataset()
-    
-    data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                              batch_size=BATCH_SIZE,
-                                              drop_last=True,)
-    
-    criterion = nn.CrossEntropyLoss()
-    model.to(device)
+        _run(i, model)
