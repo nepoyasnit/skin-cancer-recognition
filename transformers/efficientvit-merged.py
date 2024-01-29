@@ -1,30 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-# # !pip install nb_black
-# # %load_ext nb_black
-
-# !pip install timm
-# # !pip install -q kaggle
-# !pip install albumentations
-# !pip3 install torchmetrics
-# !pip install "opencv-python-headless<4.3"
-# !pip install torchsummary
-
-
-# In[2]:
-
-
-# # !kaggle datasets download -d agsam23/isic-2019-challenge
-# !unzip isic-2019-challenge.zip
-
-
-# In[1]:
-
-
 from glob import glob
 import pandas as pd
 
@@ -77,21 +50,22 @@ from torch.utils.tensorboard import SummaryWriter
 # warnings.filterwarnings('ignore')
 
 
-# In[2]:
-
-
 CORE_PATH = ""
-DATA2019_PATH = "../isic2019/labels/official/binary_labels2019_2cls.csv"
-DATA2020_PATH = "../isic2020/labels/binary_labels2020_2cls.csv"
-TRAIN_IMG2019_PATH = "../isic2019/images/official/"
-TRAIN_IMG2020_PATH = "../isic2020/images/"
-
-
-# In[3]:
-
+DATA2019_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
+DATA2020_PATH = "../../isic2020/labels/binary_labels2020_2cls.csv"
+TRAIN_IMG2019_PATH = "../../isic2019/images/official/"
+TRAIN_IMG2020_PATH = "../../isic2020/images/"
 
 RANDOM_SEED = 21
-IMG_SIZE = 384
+IMG_SIZE = 224
+BATCH_SIZE = 20
+LR = 2e-05
+GAMMA = 0.7
+N_EPOCHS = 5
+
+_mean = np.array([0.6237459654304592, 0.5201169854503829, 0.5039494477029685])
+_std = np.array([0.24196317678786788, 0.2233599432947672, 0.23118716487089888])
+
 
 
 def seed_everything(seed):
@@ -102,49 +76,6 @@ def seed_everything(seed):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
-
-
-seed_everything(RANDOM_SEED)
-
-
-# In[4]:
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.cuda.get_device_name(0)
-
-
-# In[5]:
-
-
-data2019 = pd.read_csv(DATA2019_PATH)
-data2020 = pd.read_csv(DATA2020_PATH)
-
-
-# In[6]:
-
-
-data_csv = pd.concat([data2019, data2020]).reset_index()
-
-
-# In[7]:
-
-
-data_csv.nevus.sum()
-
-
-# In[8]:
-
-
-img = cv2.imread(TRAIN_IMG2019_PATH + data_csv["image_name"][2] + ".jpg")
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
-io.imshow(img)
-
-# print(sys.getsizeof(img))
-
-
-# In[9]:
 
 
 def load_isic_training_data(image_folder2019=None, image_folder2020=None, labels2019=None, labels2020=None):
@@ -179,50 +110,6 @@ def compute_class_dist(df,known_category_names):
         print("'%s':\t%d\t(%.2f%%)" % (c, count_per_category_train[i], count_per_category_train[i]*100/sample_count_train))
 
     return
-
-
-# In[10]:
-
-
-df_ground_truth, known_category_names = load_isic_training_data(
-    image_folder2019=TRAIN_IMG2019_PATH, image_folder2020=TRAIN_IMG2020_PATH, labels2019=DATA2019_PATH, labels2020=DATA2020_PATH
-)
-df_ground_truth.head()
-
-
-# In[11]:
-
-
-df_ground_truth["kfold"] = -1
-kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
-for f, (t_, v_) in enumerate(
-    kf.split(X=df_ground_truth, y=df_ground_truth["category"])
-):
-    df_ground_truth.loc[v_, "kfold"] = f
-
-
-# In[12]:
-
-
-df_fold0 = df_ground_truth[df_ground_truth["kfold"] == 0]
-df_fold1 = df_ground_truth[df_ground_truth["kfold"] == 1]
-df_fold2 = df_ground_truth[df_ground_truth["kfold"] == 2]
-df_fold3 = df_ground_truth[df_ground_truth["kfold"] == 3]
-df_fold4 = df_ground_truth[df_ground_truth["kfold"] == 4]
-
-print("\n FOLD 0 DISTRIBUTION \n")
-compute_class_dist(df_fold0, known_category_names)
-print("FOLD 1 DISTRIBUTION \n")
-compute_class_dist(df_fold1, known_category_names)
-print("\n FOLD 2 DISTRIBUTION \n")
-compute_class_dist(df_fold2, known_category_names)
-print("\n FOLD 3 DISTRIBUTION \n")
-compute_class_dist(df_fold3, known_category_names)
-print("\n FOLD 4 DISTRIBUTION \n")
-compute_class_dist(df_fold4, known_category_names)
-
-
-# In[13]:
 
 
 class ClassificationDataset(torch.utils.data.Dataset):
@@ -261,15 +148,6 @@ class ClassificationDataset(torch.utils.data.Dataset):
             raise Exception("Backend not implemented")
         return image, targets
 
-
-# In[14]:
-
-
-# Mean:[0.6237459654304592, 0.5201169854503829, 0.5039494477029685]
-# STD:[0.24196317678786788, 0.2233599432947672, 0.23118716487089888]
-
-_mean = np.array([0.6237459654304592, 0.5201169854503829, 0.5039494477029685])
-_std = np.array([0.24196317678786788, 0.2233599432947672, 0.23118716487089888])
 
 def get_transforms(image_size, rgb_mean, rgb_std):
 
@@ -373,15 +251,6 @@ def get_whole_dataset():
 
     
     return dataset
-
-
-# In[27]:
-
-
-writer = SummaryWriter('runs/Jan24_13-43-31_u2204rtx4090/')
-
-
-# In[28]:
 
 
 class Model(nn.Module):
@@ -517,9 +386,6 @@ class Model(nn.Module):
                 specificity / len(valid_loader), acc_computed / len(valid_loader)
 
 
-# In[29]:
-
-
 def fit_gpu(
     model, epochs, device, criterion, optimizer, train_loader, valid_loader=None
 ):
@@ -590,7 +456,7 @@ def fit_gpu(
                 )
             torch.save(
                 model.state_dict(),
-                f'weights/checkpoints/efficientnet_b3{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+                f'weights/checkpoints/efficientvit-merged/efficientvit_m5_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
             )
             valid_loss_min = valid_loss
     
@@ -605,41 +471,7 @@ def fit_gpu(
     }
 
 
-# In[37]:
-
-
-BATCH_SIZE = 20
-LR = 2e-05
-GAMMA = 0.7
-N_EPOCHS = 5
-
-
-# In[38]:
-
-
-known_category_names
-
-
-# In[39]:
-
-
-# model = MobileVitV2(n_classes=len(known_category_names), pretrained=True)
-model = Model('efficientnet_b3',pretrained=True)
-# model.to(torch.device("cuda"))
-# summary(model, (3, IMG_SIZE, IMG_SIZE))
-
-
-# In[40]:
-
-
-checkpoint = torch.load('weights/checkpoints/efficientnet_b320240125-0306.pth')
-model.load_state_dict(checkpoint)
-
-
-# In[41]:
-
-
-def _run(fold):
+def _run(fold, model):
     train_dataset, valid_dataset = get_train_val(fold)
 
     #     train_sampler = torch.utils.data.Sampler(
@@ -704,106 +536,52 @@ def _run(fold):
     return logs
 
 
-# In[42]:
+if __name__ == '__main__':
+    seed_everything(RANDOM_SEED)
 
-
-np.seterr(invalid='ignore')
-
-
-# In[ ]:
-
-
-
-
-
-# In[36]:
-
-
-for i in range(5):
-    start_time = time.time()
-    _run(i)
-
-
-# In[ ]:
-
-
-dataset = get_whole_dataset()
-    
-data_loader = torch.utils.data.DataLoader(
-    dataset=dataset,
-    batch_size=BATCH_SIZE,
-    #         sampler=valid_sampler,
-    drop_last=True,
-    #         num_workers=torch.cuda.device_count(),
-)
-
-
-# In[21]:
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-criterion = nn.CrossEntropyLoss()
-model.to(device)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[22]:
-
-
-def evaluate_model(model_name):
-    model.load_state_dict(torch.load(model_name))
-    dataset = get_whole_dataset()
-    
-    data_loader = torch.utils.data.DataLoader(
-        dataset=dataset,
-        batch_size=BATCH_SIZE,
-        #         sampler=valid_sampler,
-        drop_last=True,
-        #         num_workers=torch.cuda.device_count(),
-    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    criterion = nn.CrossEntropyLoss()
-    model.to(device)
+    print(torch.cuda.get_device_name(0))
+
+    data2019 = pd.read_csv(DATA2019_PATH)
+    data2020 = pd.read_csv(DATA2020_PATH)
+    data_csv = pd.concat([data2019, data2020]).reset_index()
     
-    valid_loss, valid_w_f1, sensitivity, specificity, accuracy = model.validate_one_epoch(
-                data_loader, criterion, device
-            )
-    return valid_loss, valid_w_f1, sensitivity, specificity, accuracy
-
+    df_ground_truth, known_category_names = load_isic_training_data(
+                    image_folder2019=TRAIN_IMG2019_PATH, image_folder2020=TRAIN_IMG2020_PATH, 
+                    labels2019=DATA2019_PATH, labels2020=DATA2020_PATH
+    )
     
+    df_ground_truth["kfold"] = -1
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
+    for f, (t_, v_) in enumerate(
+        kf.split(X=df_ground_truth, y=df_ground_truth["category"])
+    ):
+        df_ground_truth.loc[v_, "kfold"] = f
 
+    df_fold0 = df_ground_truth[df_ground_truth["kfold"] == 0]
+    df_fold1 = df_ground_truth[df_ground_truth["kfold"] == 1]
+    df_fold2 = df_ground_truth[df_ground_truth["kfold"] == 2]
+    df_fold3 = df_ground_truth[df_ground_truth["kfold"] == 3]
+    df_fold4 = df_ground_truth[df_ground_truth["kfold"] == 4]
 
-# In[23]:
+    print("\n FOLD 0 DISTRIBUTION \n")
+    compute_class_dist(df_fold0, known_category_names)
+    print("FOLD 1 DISTRIBUTION \n")
+    compute_class_dist(df_fold1, known_category_names)
+    print("\n FOLD 2 DISTRIBUTION \n")
+    compute_class_dist(df_fold2, known_category_names)
+    print("\n FOLD 3 DISTRIBUTION \n")
+    compute_class_dist(df_fold3, known_category_names)
+    print("\n FOLD 4 DISTRIBUTION \n")
+    compute_class_dist(df_fold4, known_category_names)
 
+    writer = SummaryWriter()
 
-evaluate_model("weights/checkpoints/efficientnet_b320240118-1649.pth")
+    model = Model('efficientvit_m5.r224_in1k',pretrained=True)
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
+    for i in range(5):
+        start_time = time.time()
+        _run(i, model)
 
 
 
