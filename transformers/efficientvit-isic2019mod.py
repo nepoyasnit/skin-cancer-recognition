@@ -20,6 +20,7 @@ from torchsummary import summary
 import warnings
 import time
 from datetime import datetime
+from torchvision.transforms.functional import pil_to_tensor
 
 import gc
 import sys
@@ -46,7 +47,7 @@ IMG_SIZE = 224
 BATCH_SIZE = 20
 LR = 2e-05
 GAMMA = 0.7
-N_EPOCHS = 5  
+N_EPOCHS = 20 
 
 CORE_PATH = ""
 DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
@@ -82,7 +83,6 @@ class ClassificationDataset(torch.utils.data.Dataset):
         targets = self.targets[item]
         if self.backend == "pil":
             image = Image.open(self.image_paths[item]).convert("RGB")
-            #             image = np.array(image)
             if self.augmentations is not None:
                 image = self.augmentations(image)
         else:
@@ -159,8 +159,8 @@ class Model(nn.Module):
             del target, data
             gc.collect()
                     
-        epoch_loss.to('cpu').detach().numpy()
-        epoch_w_f1.to('cpu').detach().numpy()
+        #epoch_loss.to('cpu').detach().numpy()
+        #epoch_w_f1.to('cpu').detach().numpy()
 
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
@@ -210,9 +210,14 @@ class Model(nn.Module):
                 # update average validation loss and accuracy
                 valid_loss += loss
                 valid_w_f1 += w_f1
-        
-        valid_loss = valid_loss.cpu().numpy()
-        valid_w_f1 = valid_w_f1.cpu().numpy()
+                
+                del output, loss
+                del target, data
+                gc.collect()
+
+        #valid_loss = valid_loss.cpu().numpy()
+        #valid_w_f1 = valid_w_f1.cpu().numpy()
+
         
         return valid_loss / len(valid_loader), valid_w_f1 / len(valid_loader), sensitivity / len(valid_loader), \
                 specificity / len(valid_loader), acc_computed / len(valid_loader)    
@@ -412,11 +417,11 @@ def _run(fold, model):
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True, num_workers=16)
+                                               drop_last=True)
 
     valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True, num_workers=16)
+                                               drop_last=True)
 
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -442,7 +447,7 @@ def _run(fold, model):
 
     print("Saving Model")
     torch.save(model.state_dict(),
-               f'weights/checkpoints/model_efficientvit_m5_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
+               f'weights/checkpoints/efficientvit2019/model-efficientvit_m5_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
     return logs
 
 
