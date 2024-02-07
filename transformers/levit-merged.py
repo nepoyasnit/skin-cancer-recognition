@@ -48,10 +48,6 @@ from torch.utils.tensorboard import SummaryWriter
 # import warnings
 # warnings.filterwarnings('ignore')
 
-'''
-Last checkpoint - Jan31_21-56-31_u2204rtx4090efficientvit_merged
-->  Feb01_02-14-57_u2204rtx4090efficientvit_merged 
-'''
 
 
 CORE_PATH = ""
@@ -63,7 +59,7 @@ TRAIN_IMG2020_PATH = "../../isic2020/images/"
 RANDOM_SEED = 21
 IMG_SIZE = 224
 BATCH_SIZE = 277 # optimal by formula (gpu_mem - model_size) / (forw_backw_size)
-LR = 3e-05
+LR = 2e-05
 ALPHA = 0.19 # because of nevus distribution
 GAMMA = 2
 N_EPOCHS = 20
@@ -115,6 +111,7 @@ def compute_class_dist(df,known_category_names):
         print("'%s':\t%d\t(%.2f%%)" % (c, count_per_category_train[i], count_per_category_train[i]*100/sample_count_train))
 
     return
+
 
 class FocalLoss(nn.Module):
     """
@@ -321,9 +318,6 @@ class Model(nn.Module):
                 output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
             )
 
-            output = output.to('cpu').detach().numpy()
-            target = target.to('cpu').detach().numpy()
-
             # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
@@ -345,9 +339,6 @@ class Model(nn.Module):
                     print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
                     # print("Accuracy: ", acc_computed)
                     
-        epoch_loss.to('cpu').detach().numpy()
-        epoch_w_f1.to('cpu').detach().numpy()
-
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
     def validate_one_epoch(self, valid_loader, criterion, device, beta=0.000000001):
@@ -398,10 +389,7 @@ class Model(nn.Module):
                 # update average validation loss and accuracy
                 valid_loss += loss
                 valid_w_f1 += w_f1
-        
-        valid_loss = valid_loss.cpu().numpy()
-        valid_w_f1 = valid_w_f1.cpu().numpy()
-        
+                
         return valid_loss / len(valid_loader), valid_w_f1 / len(valid_loader), sensitivity / len(valid_loader), \
                 specificity / len(valid_loader), acc_computed / len(valid_loader)
 
@@ -476,7 +464,7 @@ def fit_gpu(
                 )
             torch.save(
                 model.state_dict(),
-                f'weights/checkpoints/efficientvit-merged/efficientvit_m5_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+                f'weights/checkpoints/levit-merged/levit256_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
             )
             valid_loss_min = valid_loss
     
@@ -524,7 +512,7 @@ def _run(fold, model):
         num_workers=2#torch.cuda.device_count(),
     )
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss()# nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     #     device = xm.xla_device()
     model.to(device)
@@ -551,7 +539,7 @@ def _run(fold, model):
     print("Saving Model")
     torch.save(
         model.state_dict(),
-        f'weights/checkpoints/efficientvit-merged/model-efficientvit_m5_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+        f'weights/checkpoints/levit-merged/model-levit256_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
     )
     return logs
 
@@ -595,11 +583,12 @@ if __name__ == '__main__':
     print("\n FOLD 4 DISTRIBUTION \n")
     compute_class_dist(df_fold4, known_category_names)
 
-    writer = SummaryWriter(comment='efficientvit_merged')
+    writer = SummaryWriter(comment='levit_merged')
 
-    model = Model('efficientvit_m5.r224_in1k',pretrained=True)
+    model = Model('levit_256.fb_dist_in1k',pretrained=True)
+    model.load_state_dict(torch.load('weights/checkpoints/levit-merged/levit256_9_20240202-2114.pth'))
 
-    for i in range(5):
+    for i in range(1):
         start_time = time.time()
         _run(i, model)
 

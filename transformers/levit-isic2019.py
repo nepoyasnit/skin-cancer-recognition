@@ -20,6 +20,9 @@ import warnings
 import time
 from datetime import datetime
 from torchvision.transforms.functional import pil_to_tensor
+from sklearn.utils.class_weight import compute_class_weight
+
+from torch.optim.lr_scheduler import StepLR
 
 import gc
 import sys
@@ -48,6 +51,7 @@ LR = 3e-05
 ALPHA = 0.39 # because of nevus distribution
 GAMMA = 2
 N_EPOCHS = 20
+# [1.2886929  0.81698016]
 
 CORE_PATH = ""
 DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
@@ -61,7 +65,7 @@ class FocalLoss(nn.Module):
     binary focal loss
     """
 
-    def __init__(self, alpha=ALPHA, gamma=GAMMA):
+    def __init__(self, alpha=0.2, gamma=GAMMA):
         super(FocalLoss, self).__init__()
         self.weight = torch.Tensor([alpha, 1-alpha]).cuda()
         self.nllLoss = nn.NLLLoss(weight=self.weight)
@@ -174,9 +178,6 @@ class Model(nn.Module):
             if i % 20 == 0:
                 print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
                 # print("Accuracy: ", acc_computed)
-            del output, loss
-            del target, data
-            gc.collect()
                     
         #epoch_loss.to('cpu').detach().numpy()
         #epoch_w_f1.to('cpu').detach().numpy()
@@ -218,9 +219,10 @@ class Model(nn.Module):
                 output = output.to('cpu')
                 target = target.to('cpu')
 
+
                 matrix = confusion_matrix(target=target, preds=np.argmax(output, 1), task='binary', num_classes=2)
                 tn, fp, fn, tp = matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]
-
+    
                 sensitivity += tp/(tp+fn + beta)
                 specificity += tn/(tn+fp + beta)
                 acc_computed += (tp+tn)/(tn+fp+fn+tp)
@@ -229,10 +231,6 @@ class Model(nn.Module):
                 valid_loss += loss
                 valid_w_f1 += w_f1
                 
-                del output, loss
-                del target, data
-                gc.collect()
-
         #valid_loss = valid_loss.cpu().numpy()
         #valid_w_f1 = valid_w_f1.cpu().numpy()
 
@@ -348,7 +346,8 @@ def fit_gpu(model,
             criterion, 
             optimizer, 
             train_loader, 
-            valid_loader=None):
+            valid_loader=None,
+            scheduler=None):
 
     valid_loss_min = np.Inf  # track change in validation loss
 
@@ -362,7 +361,6 @@ def fit_gpu(model,
     valid_f1s = []
 
     for epoch in range(1, epochs + 1):
-        gc.collect()
         #         para_train_loader = pl.ParallelLoader(train_loader, [device])
 
         print(f"{'='*50}")
@@ -379,10 +377,7 @@ def fit_gpu(model,
         writer.add_scalar("Loss/train", train_loss, epoch)
         writer.add_scalar("F1/train", train_w_f1, epoch)
 
-        gc.collect()
-
         if valid_loader is not None:
-            gc.collect()
             #         para_valid_loader = pl.ParallelLoader(valid_loader, [device])
             print(f"EPOCH {epoch} - VALIDATING...")
             valid_loss, valid_w_f1, sensitivity, specificity, accuracy = model.validate_one_epoch(
@@ -405,8 +400,6 @@ def fit_gpu(model,
             writer.add_scalar("Sensitivity/val", sensitivity, epoch)
             writer.add_scalar("Accuracy/val", accuracy, epoch)
 
-            gc.collect()
-
             # save model if validation loss has decreased
             if valid_loss <= valid_loss_min and epoch != 1:
                 print(
@@ -416,9 +409,12 @@ def fit_gpu(model,
                 )
             torch.save(
                 model.state_dict(),
-                f'weights/checkpoints/efficientvit_m5_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+                f'weights/checkpoints/levit2019/levit256_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
             )
             valid_loss_min = valid_loss
+        if scheduler:
+            scheduler.step()
+            print('Learning rate: ', scheduler.get_last_lr())
     return {
         "train_loss": train_losses,
         "valid_losses": valid_losses,
@@ -446,8 +442,9 @@ def _run(fold, model):
     print('Device: ', device)
     model.to(device)
 
-    lr = LR
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR)    
+    #scheduler = StepLR(optimizer=optimizer, step_size=5, gamma=0.05)
+
 
     print(f"INITIALIZING TRAINING ON {torch.cuda.device_count()} GPU CORES")
     start_time = datetime.now()
@@ -459,13 +456,14 @@ def _run(fold, model):
                    criterion=criterion,
                    optimizer=optimizer,
                    train_loader=train_loader,
-                   valid_loader=valid_loader)
+                   valid_loader=valid_loader,
+                   scheduler=None)
 
     print(f"Execution time: {datetime.now() - start_time}")
 
     print("Saving Model")
     torch.save(model.state_dict(),
-               f'weights/checkpoints/efficientvit2019/model-efficientvit_m5_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
+               f'weights/checkpoints/levit2019/model-levit256_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
     return logs
 
 
@@ -478,7 +476,7 @@ def evaluate_model(model_name):
                                               drop_last=True)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss()
     model.to(device)
     
     valid_loss, valid_w_f1, sensitivity, specificity, accuracy = model.validate_one_epoch(data_loader, 
@@ -506,10 +504,11 @@ if __name__ == "__main__":
     for f, (t_, v_) in enumerate(kf.split(X=df_ground_truth, y=df_ground_truth["category"])):
         df_ground_truth.loc[v_, "kfold"] = f
 
-    writer = SummaryWriter(comment='efficientvit2019')
+    writer = SummaryWriter(comment='levit2019')
 
-    model = Model('efficientvit_m5.r224_in1k',pretrained=True)
+    model = Model('levit_256.fb_dist_in1k',pretrained=True)
+    model.to(device)
+    print(compute_class_weight(class_weight='balanced', classes=np.unique(data_csv.nevus), y=data_csv.nevus))
 
-    for i in range(5):
-        start_time = time.time()
+    for i in range(1):
         _run(i, model)
