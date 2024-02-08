@@ -416,7 +416,7 @@ def fit_gpu(model,
                 )
             torch.save(
                 model.state_dict(),
-                f'weights/checkpoints/efficientvit_m5_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+                f'weights/checkpoints/efficientvit2019/efficientvit_m5_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
             )
             valid_loss_min = valid_loss
     return {
@@ -510,6 +510,6 @@ if __name__ == "__main__":
 
     model = Model('efficientvit_m5.r224_in1k',pretrained=True)
 
-    for i in range(5):
+    for i in range(1):
         start_time = time.time()
         _run(i, model)
