@@ -48,13 +48,13 @@ RANDOM_SEED = 21
 IMG_SIZE = 224
 BATCH_SIZE = 277 # optimal by formula (gpu_mem - model_size) / (forw_backw_size)
 LR = 3e-05
-ALPHA = 0.2 # because of nevus distribution
+ALPHA = 1 # because of nevus distribution
 GAMMA = 2
 N_EPOCHS = 20
 # [1.2886929  0.81698016]
 
 CORE_PATH = ""
-DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
+DATA_PATH = "../../isic2019/labels/official/binary_labels_balanced.csv"
 TRAIN_IMG_PATH = "../../isic2019/images/official/"
 
 _mean = np.array([0.6237459654304592, 0.5201169854503829, 0.5039494477029685])
@@ -67,7 +67,7 @@ class FocalLoss(nn.Module):
 
     def __init__(self, alpha=ALPHA, gamma=GAMMA):
         super(FocalLoss, self).__init__()
-        self.weight = torch.Tensor([alpha, 1-alpha]).cuda()
+        self.weight = torch.Tensor([alpha, alpha]).cuda()
         self.nllLoss = nn.NLLLoss(weight=self.weight)
         self.gamma = gamma
 
@@ -411,7 +411,7 @@ def fit_gpu(model,
                 )
             torch.save(
                 model.state_dict(),
-                f'weights/checkpoints/levit2019/levit256_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
+                f'weights/checkpoints/levit2019_balanced/levit256_{epoch}_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',
             )
             valid_loss_min = valid_loss
         if scheduler:
@@ -465,7 +465,7 @@ def _run(fold, model):
 
     print("Saving Model")
     torch.save(model.state_dict(),
-               f'weights/checkpoints/levit2019/model-levit256_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
+               f'weights/checkpoints/levit2019_balanced/model-levit256_{datetime.now().strftime("%Y%m%d-%H%M")}.pth',)
     return logs
 
 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
     for f, (t_, v_) in enumerate(kf.split(X=df_ground_truth, y=df_ground_truth["category"])):
         df_ground_truth.loc[v_, "kfold"] = f
 
-    writer = SummaryWriter(comment='levit2019')
+    writer = SummaryWriter(comment='levit2019_balanced')
 
     model = Model('levit_256.fb_dist_in1k',pretrained=True)
     model.to(device)

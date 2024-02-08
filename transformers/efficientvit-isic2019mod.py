@@ -45,7 +45,7 @@ RANDOM_SEED = 21
 IMG_SIZE = 224
 BATCH_SIZE = 277 # optimal by formula (gpu_mem - model_size) / (forw_backw_size)
 LR = 3e-05
-ALPHA = 0.39 # because of nevus distribution
+ALPHA = 0.2 # because of nevus distribution
 GAMMA = 2
 N_EPOCHS = 20
 
