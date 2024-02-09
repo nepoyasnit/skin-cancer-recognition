@@ -54,8 +54,11 @@ N_EPOCHS = 20
 # [1.2886929  0.81698016]
 
 CORE_PATH = ""
-DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
+WEIGHTS_PATH = "weights/checkpoints/levit2019/"
+TRAIN_LABELS_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
 TRAIN_IMG_PATH = "../../isic2019/images/official/"
+TEST_LABELS_PATH = "../../PH2Dataset/binary_labels.csv"
+TEST_IMG_PATH = "../../PH2Dataset/PH2 Dataset images/"
 
 _mean = np.array([0.6237459654304592, 0.5201169854503829, 0.5039494477029685])
 _std = np.array([0.24196317678786788, 0.2233599432947672, 0.23118716487089888])
@@ -285,6 +288,28 @@ def load_isic_training_data(image_folder, ground_truth_file):
     df_ground_truth['category'] = np.argmax(np.array(df_ground_truth.iloc[:,1:3]), axis=1)
     return df_ground_truth, known_category_names
 
+def load_ph_test_data(image_folder, labels_file):
+    test_df = pd.read_csv(labels_file)
+    # Category names
+    known_category_names = list(test_df.columns.values[1:3])
+    
+    # Add path and category columns
+    test_df['path'] = test_df.apply(lambda row : os.path.join(image_folder, row['image_name'] + 
+                                                              f"/{row['image_name']}_Dermoscopic_Image/{row['image_name']}" + '.bmp'), axis=1)
+    test_df['category'] = np.argmax(np.array(test_df.iloc[:,1:3]), axis=1)
+
+    test_images = test_df['path'].to_list()
+    test_targets = test_df['category'].to_numpy()
+
+    _, valid_aug = get_transforms(IMG_SIZE, rgb_mean=_mean, rgb_std=_std)
+
+    test_dataset = ClassificationDataset(image_paths=test_images, 
+                                         targets=test_targets,
+                                         resize=[IMG_SIZE, IMG_SIZE],
+                                         augmentations=valid_aug)
+
+    return test_dataset
+
 
 def compute_class_dist(df,known_category_names):
     sample_count_train = df.shape[0]
@@ -322,24 +347,6 @@ def get_train_val(fold, mean, std):
     )
     
     return train_dataset, valid_dataset
-
-
-def get_whole_dataset():
-
-    images = df_ground_truth['path'].to_list()
-    targets = df_ground_truth['category'].to_numpy()
-    
-    _,valid_aug = get_transforms(IMG_SIZE, _mean, _std)
-
-    dataset = ClassificationDataset(
-        image_paths=images,
-        targets=targets,
-        resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=valid_aug,
-    )
-
-    
-    return dataset
     
 
 def fit_gpu(model, 
@@ -347,6 +354,7 @@ def fit_gpu(model,
             device, 
             criterion, 
             optimizer, 
+            writer,
             train_loader, 
             valid_loader=None,
             scheduler=None):
@@ -433,11 +441,11 @@ def _run(fold, model):
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True, num_workers=torch.cuda.device_count())
+                                               drop_last=True, num_workers=2)
 
     valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                batch_size=BATCH_SIZE,
-                                               drop_last=True, num_workers=torch.cuda.device_count())
+                                               drop_last=True, num_workers=2)
 
     criterion = FocalLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -447,6 +455,7 @@ def _run(fold, model):
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)    
     #scheduler = StepLR(optimizer=optimizer, step_size=5, gamma=0.05)
 
+    writer = SummaryWriter(comment='levit2019')
 
     print(f"INITIALIZING TRAINING ON {torch.cuda.device_count()} GPU CORES")
     start_time = datetime.now()
@@ -457,6 +466,7 @@ def _run(fold, model):
                    device=device,
                    criterion=criterion,
                    optimizer=optimizer,
+                   writer=writer,
                    train_loader=train_loader,
                    valid_loader=valid_loader,
                    scheduler=None)
@@ -470,21 +480,20 @@ def _run(fold, model):
 
 
 def evaluate_model(model_name):
-    model.load_state_dict(torch.load(model_name))
-    dataset = get_whole_dataset()
+    model = Model('levit_256.fb_dist_in1k',pretrained=True)
+    model.load_state_dict(torch.load(WEIGHTS_PATH + model_name))
+    test_dataset = load_ph_test_data(TEST_IMG_PATH, TEST_LABELS_PATH)
     
-    data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                              batch_size=BATCH_SIZE,
-                                              drop_last=True)
-    
+    data_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=len(test_dataset))    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     criterion = FocalLoss()
     model.to(device)
     
-    valid_loss, valid_w_f1, sensitivity, specificity, accuracy = model.validate_one_epoch(data_loader, 
+    test_loss, test_w_f1, test_sens, test_spec, test_acc = model.validate_one_epoch(data_loader, 
                                                                                           criterion, 
                                                                                           device)
-    return valid_loss, valid_w_f1, sensitivity, specificity, accuracy
+    return test_loss, test_w_f1, test_sens, test_spec, test_acc
 
 
 if __name__ == "__main__":
@@ -493,10 +502,10 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_csv = pd.read_csv(DATA_PATH)
+    data_csv = pd.read_csv(TRAIN_LABELS_PATH)
     
     df_ground_truth, known_category_names = load_isic_training_data(TRAIN_IMG_PATH,
-                                                                    DATA_PATH)
+                                                                    TRAIN_LABELS_PATH)
     
     df_ground_truth["kfold"] = -1
     kf = StratifiedKFold(n_splits=5, 
@@ -506,11 +515,22 @@ if __name__ == "__main__":
     for f, (t_, v_) in enumerate(kf.split(X=df_ground_truth, y=df_ground_truth["category"])):
         df_ground_truth.loc[v_, "kfold"] = f
 
-    writer = SummaryWriter(comment='levit2019')
+    #writer = SummaryWriter(comment='levit2019')
 
     model = Model('levit_256.fb_dist_in1k',pretrained=True)
     model.to(device)
     print(compute_class_weight(class_weight='balanced', classes=np.unique(data_csv.nevus), y=data_csv.nevus))
 
-    for i in range(1):
-        _run(i, model)
+    # for i in range(1):
+    #     _run(i, model)
+
+    test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model('levit256_20_20240208-1518.pth')
+    print(f" \
+            Test loss: {test_loss}\n \
+            Test F1: {test_w_f1}\n \
+            Test sensitivity: {test_sens}\n \
+            Test specificity: {test_spec}\n \
+            Test accuracy: {test_acc}\n \
+          ")
+
+

@@ -37,7 +37,6 @@ import os
 import random
 import pandas as pd
 import numpy as np
-from sklearn.metrics import f1_score, confusion_matrix
 from torch.nn import functional as F
 from glob import glob
 from sklearn.utils import class_weight
@@ -63,7 +62,7 @@ import timm.utils
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 
-from torchmetrics.functional import f1_score
+from torchmetrics.functional import f1_score, confusion_matrix
 from timm.scheduler import CosineLRScheduler
 from torch.utils.tensorboard import SummaryWriter
 
@@ -108,14 +107,17 @@ torch.cuda.get_device_name(0)
 
 
 CORE_PATH = ""
-DATA_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
+WEIGHTS_PATH = "weights/checkpoints/"
+TRAIN_LABELS_PATH = "../../isic2019/labels/official/binary_labels2019_2cls.csv"
 TRAIN_IMG_PATH = "../../isic2019/images/official/"
+TEST_LABELS_PATH = "../../PH2Dataset/binary_labels.csv"
+TEST_IMG_PATH = "../../PH2Dataset/PH2 Dataset images/"
 
 
 # In[7]:
 
 
-data_csv = pd.read_csv(DATA_PATH)
+data_csv = pd.read_csv(TRAIN_LABELS_PATH)
 data_csv.head()
 
 
@@ -156,7 +158,7 @@ def compute_class_dist(df,known_category_names):
 
 
 df_ground_truth, known_category_names = load_isic_training_data(
-    TRAIN_IMG_PATH, DATA_PATH
+    TRAIN_IMG_PATH, TRAIN_LABELS_PATH
 )
 df_ground_truth.head()
 
@@ -354,7 +356,6 @@ class Model(nn.Module):
 
         self.model = timm.create_model(
             timm_model_name,
-#             "mobilevitv2_200_384_in22ft1k",
             pretrained=pretrained,
             num_classes=self.num_classes,
         )
@@ -378,9 +379,8 @@ class Model(nn.Module):
             # move tensors to GPU if CUDA is available
             if device.type == "cuda":
                 data, target = data.cuda(), target.cuda()
-            elif device.type == "xla":
-                data = data.to(device, dtype=torch.float32)
-                target = target.to(device, dtype=torch.int64)
+            else:
+                print(f"{device.type} is your device")
 
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
@@ -391,35 +391,33 @@ class Model(nn.Module):
             # backward pass: compute gradient of the loss with respect to model parameters
             loss.backward()
             # Calculate Weighted F1
-            w_f1 = f1_score(
-                output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
-            )
-            output = output.to('cpu').detach().numpy()
-            target = target.to('cpu').detach().numpy()
+            w_f1 = f1_score(output, 
+                            target, 
+                            num_classes=self.num_classes, 
+                            average="weighted", 
+                            task="multiclass")
+            # output = output.to('cpu').detach().numpy()
+            # target = target.to('cpu').detach().numpy()
 
-            tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
+            # tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
             # sensitivity = tp/(tp+fn)
             # specificity = tn/(tn+fp)
-            acc_computed = (tp+tn)/(tn+fp+fn+tp)
+            # acc_computed = (tp+tn)/(tn+fp+fn+tp)
             # torchmetrics.functional.f1(output,target,num_classes=len(known_category_names),average='weighted')
             # update training loss and accuracy
             epoch_loss += loss
             epoch_w_f1 += w_f1
 
-            # perform a single optimization step (parameter update)
-            if device.type == "xla":
-                xm.optimizer_step(optimizer)
-                if i % 20 == 0:
-                    xm.master_print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
+            nn.utils.clip_grad_value_(self.model.parameters(), clip_value=1.0)
 
-            else:
-                optimizer.step()
-                if i % 20 == 0:
-                    print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
-                    print("Accuracy: ", acc_computed)
+            # perform a single optimization step (parameter update)            
+            optimizer.step()
+            if i % 20 == 0:
+                print(f"\tBATCH {i+1}/{len(train_loader)} - LOSS: {loss}")
+                # print("Accuracy: ", acc_computed)
                     
-        epoch_loss.to('cpu').detach().numpy()
-        epoch_w_f1.to('cpu').detach().numpy()
+        #epoch_loss.to('cpu').detach().numpy()
+        #epoch_w_f1.to('cpu').detach().numpy()
 
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
@@ -439,9 +437,8 @@ class Model(nn.Module):
             # move tensors to GPU if CUDA is available
             if device.type == "cuda":
                 data, target = data.cuda(), target.cuda()
-            elif device.type == "xla":
-                data = data.to(device, dtype=torch.float32)
-                target = target.to(device, dtype=torch.int64)
+            else:
+                print(f"{device.type} is your device")                
 
             with torch.no_grad():
                 # forward pass: compute predicted outputs by passing inputs to the model
@@ -450,16 +447,19 @@ class Model(nn.Module):
                 # calculate the batch loss
                 loss = criterion(output, target)
                 # Calculate Weighted F1
-                w_f1 = f1_score(
-                    output, target, num_classes=self.num_classes, average="weighted", task="multiclass"
-                )
-                output = output.to('cpu').detach().numpy()
-                target = target.to('cpu').detach().numpy()
+                w_f1 = f1_score(output, 
+                                target, 
+                                num_classes=self.num_classes, 
+                                average="weighted", 
+                                task="multiclass"
+)
+                output = output.to('cpu')
+                target = target.to('cpu')
 
-                #print(confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel())
 
-                tn, fp, fn, tp = confusion_matrix(target, np.argmax(output, 1), labels=[0,1]).ravel()
-
+                matrix = confusion_matrix(target=target, preds=np.argmax(output, 1), task='binary', num_classes=2)
+                tn, fp, fn, tp = matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]
+    
                 sensitivity += tp/(tp+fn + beta)
                 specificity += tn/(tn+fp + beta)
                 acc_computed += (tp+tn)/(tn+fp+fn+tp)
@@ -467,12 +467,13 @@ class Model(nn.Module):
                 # update average validation loss and accuracy
                 valid_loss += loss
                 valid_w_f1 += w_f1
-        
-        valid_loss = valid_loss.cpu().numpy()
-        valid_w_f1 = valid_w_f1.cpu().numpy()
+                
+        #valid_loss = valid_loss.cpu().numpy()
+        #valid_w_f1 = valid_w_f1.cpu().numpy()
+
         
         return valid_loss / len(valid_loader), valid_w_f1 / len(valid_loader), sensitivity / len(valid_loader), \
-                specificity / len(valid_loader), acc_computed / len(valid_loader)
+                specificity / len(valid_loader), acc_computed / len(valid_loader)    
 
 
 # In[16]:
@@ -617,7 +618,7 @@ def _run(fold):
         batch_size=BATCH_SIZE,
         #         sampler=train_sampler,
         drop_last=True,
-        #         num_workers=torch.cuda.device_count(),
+        num_workers=2
     )
 
     valid_loader = torch.utils.data.DataLoader(
@@ -625,7 +626,7 @@ def _run(fold):
         batch_size=BATCH_SIZE,
         #         sampler=valid_sampler,
         drop_last=True,
-        #         num_workers=torch.cuda.device_count(),
+        num_workers=2
     )
 
     criterion = nn.CrossEntropyLoss()
@@ -669,9 +670,9 @@ np.seterr(invalid='ignore')
 # In[ ]:
 
 
-for i in range(5):
-    start_time = time.time()
-    _run(i)
+# for i in range(1):
+#     start_time = time.time()
+#     _run(i)
 
 
 
@@ -706,6 +707,27 @@ model.to(device)
 # In[ ]:
 
 
+def load_ph_test_data(image_folder, labels_file):
+    test_df = pd.read_csv(labels_file)
+    # Category names
+    known_category_names = list(test_df.columns.values[1:3])
+    
+    # Add path and category columns
+    test_df['path'] = test_df.apply(lambda row : os.path.join(image_folder, row['image_name'] + 
+                                                              f"/{row['image_name']}_Dermoscopic_Image/{row['image_name']}" + '.bmp'), axis=1)
+    test_df['category'] = np.argmax(np.array(test_df.iloc[:,1:3]), axis=1)
+
+    test_images = test_df['path'].to_list()
+    test_targets = test_df['category'].to_numpy()
+
+    _, valid_aug = get_transforms(IMG_SIZE, rgb_mean=_mean, rgb_std=_std)
+
+    test_dataset = ClassificationDataset(image_paths=test_images, 
+                                         targets=test_targets,
+                                         resize=[IMG_SIZE, IMG_SIZE],
+                                         augmentations=valid_aug)
+
+    return test_dataset
 
 
 
@@ -713,32 +735,34 @@ model.to(device)
 
 
 def evaluate_model(model_name):
-    model.load_state_dict(torch.load(model_name))
-    dataset = get_whole_dataset()
+    model = Model('efficientnet_b3',pretrained=True)
+    model.load_state_dict(torch.load(WEIGHTS_PATH + model_name))
+    test_dataset = load_ph_test_data(TEST_IMG_PATH, TEST_LABELS_PATH)
     
-    data_loader = torch.utils.data.DataLoader(
-        dataset=dataset,
-        batch_size=BATCH_SIZE,
-        #         sampler=valid_sampler,
-        drop_last=True,
-        #         num_workers=torch.cuda.device_count(),
-    )
+    data_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=len(test_dataset))    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     criterion = nn.CrossEntropyLoss()
     model.to(device)
     
-    valid_loss, valid_w_f1, sensitivity, specificity, accuracy = model.validate_one_epoch(
-                data_loader, criterion, device
-            )
-    return valid_loss, valid_w_f1, sensitivity, specificity, accuracy
+    test_loss, test_w_f1, test_sens, test_spec, test_acc = model.validate_one_epoch(data_loader, 
+                                                                                          criterion, 
+                                                                                          device)
+    return test_loss, test_w_f1, test_sens, test_spec, test_acc
 
     
 
 
 # In[23]:
 
-
-#evaluate_model("weights/checkpoints/efficientnet_b320240118-1649.pth")
+test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model('efficientnet_b320240208-2318.pth')
+print(f" \
+            Test loss: {test_loss}\n \
+            Test F1: {test_w_f1}\n \
+            Test sensitivity: {test_sens}\n \
+            Test specificity: {test_spec}\n \
+            Test accuracy: {test_acc}\n \
+          ")
 
 
 # In[ ]:
