@@ -1,14 +1,16 @@
 import os
+import torch
 import numpy as np
 import pandas as pd
+import torchvision.transforms as transforms
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
 
-from .transforms import get_transforms
+from .transforms import get_train_transforms, get_valid_transforms, get_base_transforms
 from .dataset import ClassificationDataset
-from .utils import compute_class_dist
+from .utils import compute_class_dist, get_mean_and_std
 from .constants import TRAIN_IMG_PATH2019, TRAIN_IMG_PATH2020, TRAIN_LABELS_PATH2019, TRAIN_LABELS_PATH2020, \
-                    TRAIN_LABELS_PATH_BALANCED, RANDOM_SEED, IMG_SIZE, _mean, _std
+                    TRAIN_LABELS_PATH_BALANCED, RANDOM_SEED, IMG_SIZE, BATCH_SIZE, IMG_FORMAT
 
 
 def load_isic_training_data(image_folder2019: str, labels_folder2019: str,
@@ -19,12 +21,12 @@ def load_isic_training_data(image_folder2019: str, labels_folder2019: str,
     known_category_names = list(data.columns.values[1:3])
     
     # Add path and category columns
-    data['path'] = data.apply(lambda row : os.path.join(image_folder2019, row['image_name']+'.jpg'), axis=1)
+    data['path'] = data.apply(lambda row : os.path.join(image_folder2019, row['image_name'] + IMG_FORMAT), axis=1)
     data['category'] = np.argmax(np.array(data.iloc[:,1:3]), axis=1)
 
     if labels_folder2020:
         data2020 = pd.read_csv(labels_folder2020)
-        data2020['path'] = data2020.apply(lambda row : os.path.join(image_folder2020, row['image_name']+'.jpg'), axis=1)
+        data2020['path'] = data2020.apply(lambda row : os.path.join(image_folder2020, row['image_name'] + IMG_FORMAT), axis=1)
         data2020['category'] = np.argmax(np.array(data2020.iloc[:,1:3]), axis=1)
 
         data = pd.concat([data, data2020]).reset_index()
@@ -44,12 +46,21 @@ def load_ph_test_data(image_folder: str, labels_file: str):
     test_images = test_df['path'].to_list()
     test_targets = test_df['category'].to_numpy()
 
-    _, valid_aug = get_transforms(IMG_SIZE, rgb_mean=_mean, rgb_std=_std)
+    base_aug = get_base_transforms(IMG_SIZE)
 
     test_dataset = ClassificationDataset(image_paths=test_images, 
                                          targets=test_targets,
                                          resize=[IMG_SIZE, IMG_SIZE],
-                                         augmentations=valid_aug)
+                                         augmentations=base_aug)
+    
+    loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                            batch_size=BATCH_SIZE,
+                                            drop_last=True, num_workers=2)
+    
+    test_mean, test_std = get_mean_and_std(loader)
+
+    test_dataset.augmentations = get_valid_transforms(IMG_SIZE, test_mean, test_std)
+
 
     return test_dataset
 
@@ -66,21 +77,34 @@ def get_train_val(labels: pd.DataFrame, fold: int):
     
     valid_images = df_valid['path'].to_list()
     valid_targets = df_valid['category'].to_numpy()
+
+    base_aug = get_base_transforms(IMG_SIZE)
+
+    whole_dataset = ClassificationDataset(
+        image_paths=labels['path'].to_list(),
+        targets=labels['category'].to_numpy(),
+        resize=[IMG_SIZE,IMG_SIZE],
+        augmentations=base_aug
+    )
+
+    whole_loader = torch.utils.data.DataLoader(dataset=whole_dataset,
+                                            batch_size=BATCH_SIZE,
+                                            drop_last=True, num_workers=2)
     
-    train_aug, valid_aug = get_transforms(IMG_SIZE, _mean, _std)
+    mean, std = get_mean_and_std(whole_loader)
 
     train_dataset = ClassificationDataset(
         image_paths=train_images,
         targets=train_targets,
         resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=train_aug,
+        augmentations=get_train_transforms(IMG_SIZE, mean, std)
     )
     
     valid_dataset = ClassificationDataset(
         image_paths=valid_images,
         targets=valid_targets,
         resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=valid_aug,
+        augmentations=get_valid_transforms(IMG_SIZE, mean, std)
     )
     
     return train_dataset, valid_dataset

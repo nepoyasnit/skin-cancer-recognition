@@ -9,7 +9,7 @@ if __name__ == "__main__":
     for i in range(1):
         _run(task='2019', model_name='efficientvit2019', fold=i, model=model)
 
-    # test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, 'efficientvit2019', 'model-efficientvit_m5_20240208-1838.pth')
+    # test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, 'efficientvit2019', '25_20240215-1538.pth')
     # print(f" \
     #         Test loss: {test_loss}\n \
     #         Test F1: {test_w_f1}\n \

@@ -8,7 +8,7 @@ from .constants import BETA
 
 
 class Model(nn.Module):
-    def __init__(self, timm_model_name: str, n_classes: int = 2, pretrained: bool = False):
+    def __init__(self, timm_model_name: str, n_classes: int = 2, pretrained: bool = True):
 
         super(Model, self).__init__()
         self.num_classes = n_classes
