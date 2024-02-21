@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # for i in range(1):
     #     _run(task='2019', model_name='levit2019', fold=i, model=model)
 
-    test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, 'levit2019', '20_20240216-1507.pth')
+    test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, 'levit2019', 'model-levit2019_20240220-1358.pth')
     print(f" \
             Test loss: {test_loss}\n \
             Test F1: {test_w_f1}\n \
@@ -18,5 +18,4 @@ if __name__ == "__main__":
             Test specificity: {test_spec}\n \
             Test accuracy: {test_acc}\n \
           ")
-
 

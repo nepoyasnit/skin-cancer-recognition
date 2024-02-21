@@ -128,7 +128,7 @@ def _run(task: str, model_name: str, fold: int, model: Model):
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)   
-    # optimizer = Lion(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY) 
+    # optimizer = Lion(model.parameters(), lr=LR) 
     #scheduler = StepLR(optimizer=optimizer, step_size=5, gamma=0.05)
 
     writer = SummaryWriter(comment=model_name)

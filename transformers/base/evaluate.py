@@ -10,6 +10,7 @@ def evaluate_model(model: Model, model_name: str, model_weights: str,
                    alpha: float = TEST_ALPHA, gamma: float = GAMMA):
     
     model.load_state_dict(torch.load(WEIGHTS_PATH % {'model_name': model_name} + model_weights))
+    model.eval()
     test_dataset = load_ph_test_data(TEST_IMG_PATH, TEST_LABELS_PATH)
     
     data_loader = torch.utils.data.DataLoader(dataset=test_dataset,
@@ -18,7 +19,10 @@ def evaluate_model(model: Model, model_name: str, model_weights: str,
     criterion = FocalLoss(alpha=alpha, gamma=gamma)
     model.to(device)
     
-    test_loss, test_w_f1, test_sens, test_spec, test_acc = model.validate_one_epoch(data_loader, 
+    with torch.no_grad():
+        test_loss, test_w_f1, test_sens, test_spec, test_acc = model.validate_one_epoch(data_loader, 
                                                                                           criterion, 
                                                                                           device)
     return test_loss, test_w_f1, test_sens, test_spec, test_acc
+
+

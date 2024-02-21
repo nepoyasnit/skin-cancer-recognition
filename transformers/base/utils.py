@@ -37,6 +37,9 @@ def get_mean_and_std(dataloader):
  
     # std = sqrt(E[X^2] - (E[X])^2)
     std = (channels_squared_sum / num_batches - mean ** 2) ** 0.5
+
+    print('Mean: ', mean)
+    print('Std: ', std)
  
     return mean, std
 

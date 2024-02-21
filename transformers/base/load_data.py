@@ -9,7 +9,7 @@ from sklearn.utils.class_weight import compute_class_weight
 from .transforms import get_train_transforms, get_valid_transforms, get_base_transforms
 from .dataset import ClassificationDataset
 from .utils import compute_class_dist, get_mean_and_std
-from .constants import TRAIN_IMG_PATH2019, TRAIN_IMG_PATH2020, TRAIN_LABELS_PATH2019, TRAIN_LABELS_PATH2020, \
+from .constants import _mean, _std, TRAIN_IMG_PATH2019, TRAIN_IMG_PATH2020, TRAIN_LABELS_PATH2019, TRAIN_LABELS_PATH2020, \
                     TRAIN_LABELS_PATH_BALANCED, RANDOM_SEED, IMG_SIZE, BATCH_SIZE, IMG_FORMAT
 
 
@@ -57,9 +57,7 @@ def load_ph_test_data(image_folder: str, labels_file: str):
                                             batch_size=BATCH_SIZE,
                                             drop_last=True, num_workers=2)
     
-    test_mean, test_std = get_mean_and_std(loader)
-
-    test_dataset.augmentations = get_valid_transforms(IMG_SIZE, test_mean, test_std)
+    test_dataset.augmentations = get_valid_transforms(IMG_SIZE, _mean, _std)
 
 
     return test_dataset

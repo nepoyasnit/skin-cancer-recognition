@@ -1,5 +1,4 @@
-import numpy as np
-
+import torch
 
 RANDOM_SEED = 21
 
@@ -25,9 +24,8 @@ BETA = 0.000000001
 
 N_EPOCHS = 20
 
-_mean = np.array([0.6237459654304592, 0.5201169854503829, 0.5039494477029685])
-
-_std = np.array([0.24196317678786788, 0.2233599432947672, 0.23118716487089888])
+_mean = torch.Tensor([0.6683, 0.5300, 0.5247])
+_std = torch.Tensor([0.2229, 0.2028, 0.2144])
 
 IMG_FORMAT = '.jpg'
 
