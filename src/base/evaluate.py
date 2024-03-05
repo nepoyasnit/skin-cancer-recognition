@@ -30,6 +30,7 @@ def evaluate_model(model: Model, model_name: str, model_weights: str,
 def evaluate_ensemble(models: list[Model], beta=BETA):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    test_loss = 0.0
     test_w_f1 = 0.0
     sensitivity = 0.0
     specificity = 0.0
@@ -42,19 +43,23 @@ def evaluate_ensemble(models: list[Model], beta=BETA):
     test_dataset = load_ph_test_data(TEST_IMG_PATH, TEST_LABELS_PATH)
     
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                              batch_size=len(test_dataset))    
+                                              batch_size=len(test_dataset)) 
+    criterion = FocalLoss(alpha=TEST_ALPHA, gamma=GAMMA)
+   
 
     for data, target in test_loader:
         if device.type == "cuda":
             data, target = data.cuda(), target.cuda()
         else:
             print(f"{device.type} is your device")
-        output = torch.zeros([120, 2]).cuda()
+        output = torch.zeros([len(test_dataset), 2]).cuda()
         with torch.no_grad():
             for model in models:
                 output += model(data)
             
             output /= len(models)
+
+            loss = criterion(output, target)
 
             w_f1 = f1_score(output, 
                     target, 
@@ -74,9 +79,10 @@ def evaluate_ensemble(models: list[Model], beta=BETA):
             acc_computed += (tp+tn)/(tn+fp+fn+tp)
 
             # update average validation loss and accuracy
+            test_loss += loss
             test_w_f1 += w_f1
         
-        return test_w_f1 / len(test_loader), sensitivity / len(test_loader), \
+        return test_loss / len(test_loader), test_w_f1 / len(test_loader), sensitivity / len(test_loader), \
                 specificity / len(test_loader), acc_computed / len(test_loader)    
 
 

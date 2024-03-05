@@ -8,3 +8,4 @@ import base.load_data
 import base.evaluate
 import base.train
 import base.scheduler
+import base.quantize

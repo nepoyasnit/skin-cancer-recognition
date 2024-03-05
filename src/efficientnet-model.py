@@ -6,9 +6,6 @@ from torchsummary import summary
 
 if __name__ == "__main__":
     model = Model('efficientnet_b4',pretrained=True)
-    model.to('cuda')
-
-    summary(model, (3, 224, 224))
 
     # for i in range(1):
     #     _run(task='merged', model_name='efficientnet_b4', fold=i, model=model)

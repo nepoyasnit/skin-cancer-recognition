@@ -14,6 +14,7 @@ class Model(nn.Module):
 
         super(Model, self).__init__()
         self.num_classes = n_classes
+        self.quant = torch.ao.quantization.QuantStub()
 
         self.model = timm.create_model(
             timm_model_name,
@@ -24,6 +25,7 @@ class Model(nn.Module):
         # self.model.head = nn.Linear(self.model.head, n_classes)
 
     def forward(self, x):
+        x = self.quant(x)
         x = self.model(x)
         x = torch.softmax(x, dim=1)
         return x
