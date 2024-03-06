@@ -18,7 +18,7 @@ def evaluate_model(model: Model, model_name: str, model_weights: str,
     data_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                               batch_size=len(test_dataset))    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    criterion = FocalLoss(alpha=alpha, gamma=gamma)
+    criterion = FocalLoss(alpha=alpha, gamma=gamma, device=device)
     model.to(device)
     
     test_loss, test_w_f1, test_sens, test_spec, test_acc = model.validate_one_epoch(data_loader, 
@@ -44,15 +44,13 @@ def evaluate_ensemble(models: list[Model], beta=BETA):
     
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                               batch_size=len(test_dataset)) 
-    criterion = FocalLoss(alpha=TEST_ALPHA, gamma=GAMMA)
+    criterion = FocalLoss(alpha=TEST_ALPHA, gamma=GAMMA, device=device)
    
 
     for data, target in test_loader:
-        if device.type == "cuda":
-            data, target = data.cuda(), target.cuda()
-        else:
-            print(f"{device.type} is your device")
-        output = torch.zeros([len(test_dataset), 2]).cuda()
+        data, target = data.to(device), target.to(device)
+
+        output = torch.zeros([len(test_dataset), 2]).to(device)
         with torch.no_grad():
             for model in models:
                 output += model(data)

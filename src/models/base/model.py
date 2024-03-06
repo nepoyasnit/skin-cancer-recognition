@@ -15,7 +15,8 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.num_classes = n_classes
         self.quant = torch.ao.quantization.QuantStub()
-
+        self.dequant = torch.ao.quantization.DeQuantStub()
+        
         self.model = timm.create_model(
             timm_model_name,
             pretrained=pretrained,
@@ -28,6 +29,7 @@ class Model(nn.Module):
         x = self.quant(x)
         x = self.model(x)
         x = torch.softmax(x, dim=1)
+        x = self.dequant(x)
         return x
 
     def train_one_epoch(self, train_loader: torch.utils.data.DataLoader,
@@ -110,8 +112,6 @@ class Model(nn.Module):
 )
                 output = output.to('cpu')
                 target = target.to('cpu')
-
-                pd.DataFrame({'output': np.argmax(output, 1), 'target': target}).to_csv(f"logs/val{datetime.now().strftime('%Y%m%d-%H%M')}")
 
                 matrix = confusion_matrix(target=target, preds=np.argmax(output, 1), task='binary', num_classes=self.num_classes)
                 tn, fp, fn, tp = matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]

@@ -129,8 +129,9 @@ def _run(task: str, model_name: str, fold: int, model: Model):
                                                batch_size=BATCH_SIZE, shuffle=True,
                                                drop_last=True, num_workers=2)
 
-    criterion = FocalLoss(alpha=alpha, gamma=GAMMA)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    criterion = FocalLoss(alpha=alpha, gamma=GAMMA, device=device)
     print('Device: ', device)
     model.to(device)
 

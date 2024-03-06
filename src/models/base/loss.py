@@ -8,9 +8,9 @@ class FocalLoss(nn.Module):
     binary focal loss
     """
 
-    def __init__(self, alpha: float, gamma: float):
+    def __init__(self, alpha: float, gamma: float, device: torch.device):
         super(FocalLoss, self).__init__()
-        self.weight = torch.Tensor([alpha, 1-alpha]).cuda()
+        self.weight = torch.Tensor([alpha, 1-alpha]).to(device)
         self.nllLoss = nn.NLLLoss(weight=self.weight)
         self.gamma = gamma
 

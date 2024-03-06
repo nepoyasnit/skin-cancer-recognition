@@ -1,11 +1,10 @@
 import torch
+from torchsummary import summary
 
 from base.model import Model
-from base.evaluate import evaluate_ensemble
-from base.quantize import quantize_models
 
 
-if __name__ == "__main__":
+def get_best_model():
     device = torch.device('cuda')
 
     efficientnet = Model('efficientnet_b4',pretrained=True)
@@ -27,14 +26,5 @@ if __name__ == "__main__":
     # levit.load_state_dict(torch.load('weights/checkpoints/best/model-levit2019_20240305-1358.pth', map_location=device))
 
     models = [efficientnet, efficientnet2, efficientnet3, efficientvit, efficientvit2]
-    # models = quantize_models(models)
 
-    test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_ensemble(models)
-    print(f" \
-            Test loss: {test_loss}\n \
-            Test F1: {test_w_f1}\n \
-            Test sensitivity: {test_sens}\n \
-            Test specificity: {test_spec}\n \
-            Test accuracy: {test_acc}\n \
-          ")
-
+    return models
