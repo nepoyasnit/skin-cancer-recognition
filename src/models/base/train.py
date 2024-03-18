@@ -12,7 +12,8 @@ from .load_data import get_train_val, get_kfold
 from .model import Model
 from .scheduler import GradualWarmupSchedulerV2
 from .constants import LR, BATCH_SIZE, ALPHA2019, ALPHA_MERG, BALANCED_ALPHA, GAMMA, WEIGHT_DECAY, REMOVED_ALPHA, \
-                    N_EPOCHS, RANDOM_SEED, EPOCH_WEIGHTS_PATH, MODEL_WEIGHTS_PATH, T0, T_MULT, ETA_MIN, LAST_EPOCH
+                    N_EPOCHS, RANDOM_SEED, EPOCH_WEIGHTS_PATH, MODEL_WEIGHTS_PATH, T0, T_MULT, ETA_MIN, LAST_EPOCH, \
+                    MERGED_TASK, REMOVED_TASK, BALANCED_TASK, ISIC2019_TASK, BAD_TASK_ERROR, CUDA_DEVICE, CPU_DEVICE
 
 
 def fit_gpu(model_name: str,
@@ -105,16 +106,16 @@ def fit_gpu(model_name: str,
 
 
 def _run(task: str, model_name: str, fold: int, model: Model):
-    if task == '2019':
+    if task == ISIC2019_TASK:
         alpha = ALPHA2019
-    elif task == 'balanced':
+    elif task == BALANCED_TASK:
         alpha = BALANCED_ALPHA
-    elif task == 'removed':
+    elif task == REMOVED_TASK:
         alpha = REMOVED_ALPHA
-    elif task =='merged':
+    elif task == MERGED_TASK:
         alpha = ALPHA_MERG
     else:
-        raise Exception("Bad dataset task! Please, specify name with 2019/balanced/removed/merged")
+        raise Exception(BAD_TASK_ERROR)
 
 
     seed_everything(RANDOM_SEED)
@@ -129,7 +130,7 @@ def _run(task: str, model_name: str, fold: int, model: Model):
                                                batch_size=BATCH_SIZE, shuffle=True,
                                                drop_last=True, num_workers=2)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE)
 
     criterion = FocalLoss(alpha=alpha, gamma=GAMMA, device=device)
     print('Device: ', device)

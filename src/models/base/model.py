@@ -6,7 +6,7 @@ from torch import nn
 from datetime import datetime
 from torchmetrics.functional import f1_score, confusion_matrix
 
-from .constants import BETA, NUM_CLASSES
+from .constants import BETA, NUM_CLASSES, CUDA_DEVICE, CPU_DEVICE
 
 
 class Model(nn.Module):
@@ -41,7 +41,7 @@ class Model(nn.Module):
         self.model.train()
         for i, (data, target) in enumerate(train_loader):
             # move tensors to GPU if CUDA is available
-            if device.type == "cuda":
+            if device.type == CUDA_DEVICE:
                 data, target = data.cuda(), target.cuda()
             else:
                 print(f"{device.type} is your device")
@@ -74,7 +74,6 @@ class Model(nn.Module):
                     
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
-    @torch.jit.export
     def validate_one_epoch(self, valid_loader: torch.utils.data.DataLoader,
                           criterion: nn.Module, device: torch.device, beta: float = BETA):
         # keep track of validation loss
@@ -90,7 +89,7 @@ class Model(nn.Module):
         self.model.eval()
         for data, target in valid_loader:
             # move tensors to GPU if CUDA is available
-            if device.type == "cuda":
+            if device.type == CUDA_DEVICE:
                 data, target = data.cuda(), target.cuda()
             else:
                 print(f"{device.type} is your device")                
@@ -109,8 +108,8 @@ class Model(nn.Module):
                                 average="weighted", 
                                 task="multiclass"
 )
-                output = output.to('cpu')
-                target = target.to('cpu')
+                output = output.to(CPU_DEVICE)
+                target = target.to(CPU_DEVICE)
 
                 matrix = confusion_matrix(target=target, preds=np.argmax(output, 1), task='binary', num_classes=self.num_classes)
                 tn, fp, fn, tp = matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]

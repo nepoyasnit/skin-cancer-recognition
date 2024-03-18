@@ -1,15 +1,16 @@
-from base.model import Model
-from base.evaluate import evaluate_model
-from base.train import _run
+from src.models.base.model import Model
+from src.models.base.evaluate import evaluate_model
+from src.models.base.train import _run
+from src.models.constants import EFFICIENTVIT_TIMM, MERGED_TASK
 
 
 if __name__ == "__main__":
-    model = Model('efficientvit_m5.r224_in1k',pretrained=True)
+    model = Model(EFFICIENTVIT_TIMM,pretrained=True)
 
     for i in range(1):
-        _run(task='merged', model_name='efficientvit2019', fold=i, model=model)
+        _run(task=MERGED_TASK, model_name=EFFICIENTVIT_TIMM, fold=i, model=model)
 
-    # test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, 'efficientvit2019', 'model-efficientvit2019_20240229-1815.pth')
+    # test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_model(model, EFFICIENTVIT_TIMM, 'model-efficientvit2019_20240229-1815.pth')
     # print(f" \
     #         Test loss: {test_loss}\n \
     #         Test F1: {test_w_f1}\n \

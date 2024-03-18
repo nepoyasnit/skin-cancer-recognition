@@ -1,9 +1,9 @@
 import torch
 from torchsummary import summary
 
-from best_model import get_best_model
-from base.model import Model
-from base.evaluate import evaluate_ensemble
+from src.models.best_model import get_best_model
+from src.models.base.model import Model
+from src.models.base.evaluate import evaluate_ensemble
 
 
 if __name__ == "__main__":

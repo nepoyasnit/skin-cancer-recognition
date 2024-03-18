@@ -10,7 +10,8 @@ from .transforms import get_train_transforms, get_valid_transforms, get_base_tra
 from .dataset import ClassificationDataset
 from .utils import compute_class_dist, get_mean_and_std
 from .constants import _mean, _std, TRAIN_IMG_PATH2019, TRAIN_IMG_PATH2020, TRAIN_LABELS_PATH2019, TRAIN_LABELS_PATH2020, TRAIN_MELANOMA_PATH2020, \
-                    TRAIN_LABELS_PATH_BALANCED, RANDOM_SEED, IMG_SIZE, BATCH_SIZE, TRAIN_IMG_FORMAT, TEST_IMG_FORMAT, TRAIN_LABELS2019_REMOVED
+                    TRAIN_LABELS_PATH_BALANCED, RANDOM_SEED, IMG_SIZE, BATCH_SIZE, TRAIN_IMG_FORMAT, TEST_IMG_FORMAT, TRAIN_LABELS2019_REMOVED, \
+                    MERGED_TASK, REMOVED_TASK, BALANCED_TASK, ISIC2019_TASK, BAD_TASK_ERROR
 
 
 def load_isic_training_data(image_folder2019: str, labels_folder2019: str,
@@ -34,13 +35,10 @@ def load_isic_training_data(image_folder2019: str, labels_folder2019: str,
 
         print(data.shape)
 
-
     return data, known_category_names
 
 def load_ph_test_data(image_folder: str, labels_file: str):
     test_df = pd.read_csv(labels_file)
-    # Category names
-    known_category_names = list(test_df.columns.values[1:3])
     
     # Add path and category columns
     test_df['path'] = test_df.apply(lambda row : os.path.join(image_folder, row['image_name']  + TRAIN_IMG_FORMAT), axis=1)
@@ -94,34 +92,34 @@ def get_train_val(labels: pd.DataFrame, fold: int):
         image_paths=train_images,
         targets=train_targets,
         resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=get_train_transforms(IMG_SIZE, mean, std)
+        augmentations=get_train_transforms(IMG_SIZE)
     )
     
     valid_dataset = ClassificationDataset(
         image_paths=valid_images,
         targets=valid_targets,
         resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=get_valid_transforms(IMG_SIZE, mean, std)
+        augmentations=get_valid_transforms(IMG_SIZE)
     )
     
     return train_dataset, valid_dataset
 
 
 def get_kfold(task: str):
-    if task == '2019':
+    if task == ISIC2019_TASK:
         labels, known_category_names = load_isic_training_data(TRAIN_IMG_PATH2019, 
                                                            TRAIN_LABELS_PATH2019)
-    elif task == 'balanced':
+    elif task == BALANCED_TASK:
         labels, known_category_names = load_isic_training_data(TRAIN_IMG_PATH2019, 
                                                            TRAIN_LABELS_PATH_BALANCED)
-    elif task == 'removed':
+    elif task == REMOVED_TASK:
         labels, known_category_names = load_isic_training_data(TRAIN_IMG_PATH2019, 
                                                            TRAIN_LABELS2019_REMOVED)
-    elif task == 'merged':
+    elif task == MERGED_TASK:
         labels, known_category_names = load_isic_training_data(TRAIN_IMG_PATH2019, TRAIN_LABELS2019_REMOVED, \
                                                             TRAIN_IMG_PATH2020, TRAIN_MELANOMA_PATH2020)
     else:
-        raise Exception("Bad dataset task! Please, specify name with 2019/balanced/removed/merged")
+        raise Exception(BAD_TASK_ERROR)
 
     compute_class_dist(labels, known_category_names)
     

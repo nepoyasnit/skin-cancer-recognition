@@ -5,7 +5,8 @@ from torchmetrics.functional import f1_score, confusion_matrix
 from .load_data import load_ph_test_data
 from .model import Model
 from .loss import FocalLoss
-from .constants import TEST_ALPHA, GAMMA, WEIGHTS_PATH, TEST_IMG_PATH, TEST_LABELS_PATH, BETA, NUM_CLASSES
+from .constants import TEST_ALPHA, GAMMA, WEIGHTS_PATH, TEST_IMG_PATH, TEST_LABELS_PATH, BETA, NUM_CLASSES,\
+                    CUDA_DEVICE, CPU_DEVICE
 
 
 def evaluate_model(model: Model, model_name: str, model_weights: str = None, 
@@ -18,7 +19,7 @@ def evaluate_model(model: Model, model_name: str, model_weights: str = None,
     
     data_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                               batch_size=len(test_dataset))    
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE)
     criterion = FocalLoss(alpha=alpha, gamma=gamma, device=device)
     model.to(device)
     
@@ -29,7 +30,7 @@ def evaluate_model(model: Model, model_name: str, model_weights: str = None,
 
 
 def evaluate_ensemble(models: list[Model], beta=BETA):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE)
 
     test_loss = 0.0
     test_w_f1 = 0.0
@@ -66,8 +67,8 @@ def evaluate_ensemble(models: list[Model], beta=BETA):
                     average="weighted", 
                     task="multiclass")
             
-            output = output.to('cpu')
-            target = target.to('cpu')
+            output = output.to(CPU_DEVICE)
+            target = target.to(CPU_DEVICE)
 
 
             matrix = confusion_matrix(target=target, preds=np.argmax(output, 1), task='binary', num_classes=NUM_CLASSES)
