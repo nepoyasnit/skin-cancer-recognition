@@ -3,18 +3,7 @@ from albumentations.pytorch import ToTensorV2
 import torchvision.transforms as transforms
 
 
-def get_train_transforms(image_size: int, train_mean: list, train_std: list):
-    # transforms_train = transforms.Compose(
-    #     [
-    #         transforms.Resize((image_size, image_size)),
-    #         transforms.RandomHorizontalFlip(p=0.3),
-    #         transforms.RandomVerticalFlip(p=0.3),
-    #         transforms.RandomResizedCrop(image_size),
-    #         transforms.ToTensor(),
-    #         transforms.Normalize(train_mean, train_std),
-    #     ]
-    # )
-
+def get_train_transforms(image_size: int):
     transforms_train = albumentations.Compose([
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
@@ -45,7 +34,7 @@ def get_train_transforms(image_size: int, train_mean: list, train_std: list):
     return transforms_train
 
 
-def get_valid_transforms(image_size: int, val_mean: list, val_std: list):
+def get_valid_transforms(image_size: int):
     transforms_val = albumentations.Compose([
         albumentations.Resize(image_size, image_size),
         albumentations.Normalize()

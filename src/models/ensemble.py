@@ -7,7 +7,7 @@ from base.evaluate import evaluate_ensemble
 
 
 if __name__ == "__main__":
-    models = get_best_model()
+    models, names = get_best_model()
 
     test_loss, test_w_f1, test_sens, test_spec, test_acc = evaluate_ensemble(models)
     print(f" \

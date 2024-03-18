@@ -1,3 +1,4 @@
 .ipynb_checkpoints/
 src/models/weights
+src/models/trt_models
 __pycache__/

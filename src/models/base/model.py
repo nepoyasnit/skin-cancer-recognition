@@ -10,26 +10,23 @@ from .constants import BETA, NUM_CLASSES
 
 
 class Model(nn.Module):
-    def __init__(self, timm_model_name: str, n_classes: int = NUM_CLASSES, pretrained: bool = True):
+    model: timm.models.efficientnet.EfficientNet
+    num_classes: int
 
+    def __init__(self, timm_model_name: str, n_classes: int = NUM_CLASSES, pretrained: bool = True):
         super(Model, self).__init__()
         self.num_classes = n_classes
-        self.quant = torch.ao.quantization.QuantStub()
-        self.dequant = torch.ao.quantization.DeQuantStub()
         
         self.model = timm.create_model(
             timm_model_name,
             pretrained=pretrained,
             num_classes=self.num_classes,
         )
-
+        
         # self.model.head = nn.Linear(self.model.head, n_classes)
-
-    def forward(self, x):
-        x = self.quant(x)
+    def forward(self, x: torch.Tensor):
         x = self.model(x)
         x = torch.softmax(x, dim=1)
-        x = self.dequant(x)
         return x
 
     def train_one_epoch(self, train_loader: torch.utils.data.DataLoader,
@@ -77,6 +74,7 @@ class Model(nn.Module):
                     
         return epoch_loss / len(train_loader), epoch_w_f1 / len(train_loader)
 
+    @torch.jit.export
     def validate_one_epoch(self, valid_loader: torch.utils.data.DataLoader,
                           criterion: nn.Module, device: torch.device, beta: float = BETA):
         # keep track of validation loss
@@ -100,6 +98,7 @@ class Model(nn.Module):
             with torch.no_grad():
                 # forward pass: compute predicted outputs by passing inputs to the model
                 output = self.model(data)
+                print(output[0])
 
                 # calculate the batch loss
                 loss = criterion(output, target)

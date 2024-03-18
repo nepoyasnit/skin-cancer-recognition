@@ -1,5 +1,4 @@
 import torch
-from torchsummary import summary
 
 from base.model import Model
 
@@ -26,5 +25,6 @@ def get_best_model():
     # levit.load_state_dict(torch.load('weights/checkpoints/best/model-levit2019_20240305-1358.pth', map_location=device))
 
     models = [efficientnet, efficientnet2, efficientnet3, efficientvit, efficientvit2]
+    names = ['efficientnet_b4-f1_0_92', 'efficientnet_b4-weights0.05', 'model-efficientnet_b4', 'efficientvit-f1_0_914', 'efficientvit2019_sens0_825']
 
-    return models
+    return models, names

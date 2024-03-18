@@ -55,12 +55,8 @@ def load_ph_test_data(image_folder: str, labels_file: str):
                                          targets=test_targets,
                                          resize=[IMG_SIZE, IMG_SIZE],
                                          augmentations=base_aug)
-    
-    loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                            batch_size=BATCH_SIZE,
-                                            drop_last=True, num_workers=2)
-    
-    test_dataset.augmentations = get_valid_transforms(IMG_SIZE, _mean, _std)
+        
+    test_dataset.augmentations = get_valid_transforms(IMG_SIZE)
 
 
     return test_dataset
