@@ -12,7 +12,7 @@ LR = 3e-5
 
 ALPHA2019 = 0.2 # because of nevus distribution
 
-ALPHA_MERG = 0.2
+ALPHA_MERG = 0.05
 
 TEST_ALPHA = 0.2
 

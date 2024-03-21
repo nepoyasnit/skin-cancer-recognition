@@ -96,8 +96,7 @@ class Model(nn.Module):
 
             with torch.no_grad():
                 # forward pass: compute predicted outputs by passing inputs to the model
-                output = self.model(data)
-                print(output[0])
+                output = self.forward(data)
 
                 # calculate the batch loss
                 loss = criterion(output, target)
