@@ -2,3 +2,4 @@
 src/models/weights
 src/models/trt_models
 __pycache__/
+runs/
