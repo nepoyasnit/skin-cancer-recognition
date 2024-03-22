@@ -1,5 +1,4 @@
 .ipynb_checkpoints/
-src/runs/
 src/models/weights
 __pycache__/
 runs/
