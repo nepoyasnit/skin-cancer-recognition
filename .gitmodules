@@ -1,3 +1,6 @@
 [submodule "src/gradcam"]
 	path = src/gradcam
 	url = https://github.com/FrancescoSaverioZuppichini/A-journey-into-Convolutional-Neural-Network-visualization-.git
+[submodule "src/inspyrenet"]
+	path = src/inspyrenet
+	url = https://github.com/plemeri/InSPyReNet.git
