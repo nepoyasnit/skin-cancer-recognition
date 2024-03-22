@@ -1,7 +1,7 @@
 .ipynb_checkpoints/
+src/runs/
 src/models/weights
 __pycache__/
 runs/
 src/deploy/trt_models
-src/runs/
 images/
