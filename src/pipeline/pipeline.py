@@ -21,6 +21,9 @@ class ImagePipeline:
         self.models, self.models_names = get_best_model()
 
     def process(self):
+        '''
+         Get model output and attention maps
+        '''
         os.makedirs(DEFAULT_SAVE_PATH, exist_ok=True)
 
         if self.image_name:
@@ -40,6 +43,9 @@ class ImagePipeline:
         return output, attention_img
 
     def _transform_image(self, image_path: str):
+        '''
+         Make crops and albumentations transforms 
+        '''
         mask = get_mask_image(image_path, self.device)[0]
         image = self.__crop_image(self.orig_image, mask)
 
@@ -50,6 +56,9 @@ class ImagePipeline:
         return image
 
     def _predict(self, image: Image):
+        '''
+         Get prediction from models ensemble
+        '''
         for model in self.models:
             model.to(self.device)
             model.eval()
@@ -68,6 +77,9 @@ class ImagePipeline:
 
 
     def __crop_image(self, image: Image, mask: Image):
+        '''
+         Crop image by mask
+        '''
         bbox = mask.getbbox()
 
         cropped_image = image.crop(bbox)
