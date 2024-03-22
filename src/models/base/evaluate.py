@@ -55,7 +55,7 @@ def evaluate_ensemble(models: list[Model], beta=BETA):
         output = torch.zeros([len(test_dataset), 2]).to(device)
         with torch.no_grad():
             for model in models:
-                output += model(data)
+                output += model.forward(data)
             
             output /= len(models)
 

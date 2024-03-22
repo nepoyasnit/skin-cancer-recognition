@@ -72,22 +72,7 @@ def get_train_val(labels: pd.DataFrame, fold: int):
     
     valid_images = df_valid['path'].to_list()
     valid_targets = df_valid['category'].to_numpy()   
-
-    base_aug = get_base_transforms(IMG_SIZE) 
-
-    whole_dataset = ClassificationDataset(
-        image_paths=labels['path'].to_list(),
-        targets=labels['category'].to_numpy(),
-        resize=[IMG_SIZE,IMG_SIZE],
-        augmentations=base_aug
-    )
-
-    whole_loader = torch.utils.data.DataLoader(dataset=whole_dataset,
-                                            batch_size=BATCH_SIZE,
-                                            drop_last=True, num_workers=2)
     
-    mean, std = get_mean_and_std(whole_loader)
-
     train_dataset = ClassificationDataset(
         image_paths=train_images,
         targets=train_targets,
