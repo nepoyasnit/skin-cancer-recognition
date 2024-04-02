@@ -4,3 +4,4 @@ __pycache__/
 runs/
 src/deploy/trt_models
 original_images/
+src/deploy/saved_models/

@@ -13,15 +13,18 @@ class Model(nn.Module):
     model: timm.models.efficientnet.EfficientNet
     num_classes: int
 
-    def __init__(self, timm_model_name: str, n_classes: int = NUM_CLASSES, pretrained: bool = True):
+    def __init__(self, timm_model_name: str, model: any = None, n_classes: int = NUM_CLASSES, pretrained: bool = True):
         super(Model, self).__init__()
         self.num_classes = n_classes
         
-        self.model = timm.create_model(
-            timm_model_name,
-            pretrained=pretrained,
-            num_classes=self.num_classes,
-        )
+        if not model:
+            self.model = timm.create_model(
+                timm_model_name,
+                pretrained=pretrained,
+                num_classes=self.num_classes,
+            )
+        else:
+            self.model = model
         
         # self.model.head = nn.Linear(self.model.head, n_classes)
     def forward(self, x: torch.Tensor):

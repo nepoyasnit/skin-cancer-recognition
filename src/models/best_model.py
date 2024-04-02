@@ -4,7 +4,7 @@ from src.models.base.model import Model
 from src.models.constants import CUDA_DEVICE, BEST_MODELS_NAMES, BEST_MODELS_TYPES, BEST_MODELS_DIR, WEIGHTS_FORMAT
 
 
-def get_best_model():
+def get_best_model() -> tuple[list, list[str]]:
     device = torch.device(CUDA_DEVICE)
     models = []
 

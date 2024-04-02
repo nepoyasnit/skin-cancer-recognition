@@ -1,3 +1,5 @@
+from src.pipeline.pipeline import ImagePipeline
+
 import gradio as gr 
 from gradio.themes import Base
 import os
